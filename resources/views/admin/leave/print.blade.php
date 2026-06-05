@@ -143,7 +143,7 @@
     <main class="sheet">
       @php
         $durationUnit = $leaveRequest->duration_unit ?: 'hari';
-        $approver = $leaveRequest->approver;
+        $approver = $approver ?? $leaveRequest->approver;
         $approverName = $approver?->name ?: 'Andhika Ilviano Rizqullah';
         $approverNip = $approver?->nip ?: '199605192019031003';
       @endphp

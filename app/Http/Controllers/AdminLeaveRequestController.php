@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -163,8 +164,9 @@ class AdminLeaveRequestController extends Controller
         abort_unless($leaveRequest->status === LeaveRequest::STATUS_APPROVED, 403);
 
         $leaveRequest->load('user', 'approver');
+        $approver = $this->approverForLeave($leaveRequest);
 
-        return view('admin.leave.print', compact('leaveRequest'));
+        return view('admin.leave.print', compact('leaveRequest', 'approver'));
     }
 
     public function exportExcel(Request $request): Response
@@ -221,5 +223,32 @@ class AdminLeaveRequestController extends Controller
         }
 
         return $count;
+    }
+
+    private function approverForLeave(LeaveRequest $leaveRequest): ?User
+    {
+        if ($leaveRequest->approver?->signature_path) {
+            return $leaveRequest->approver;
+        }
+
+        return User::query()
+            ->where('role', 'admin')
+            ->where('name', 'like', '%Andhika%')
+            ->whereNotNull('signature_path')
+            ->first()
+            ?? User::query()
+                ->where('role', 'admin')
+                ->whereNotNull('signature_path')
+                ->orderBy('name')
+                ->first()
+            ?? $leaveRequest->approver
+            ?? User::query()
+                ->where('role', 'admin')
+                ->where('name', 'like', '%Andhika%')
+                ->first()
+            ?? User::query()
+                ->where('role', 'admin')
+                ->orderBy('name')
+                ->first();
     }
 }
