@@ -92,10 +92,10 @@
       }
       .cuti-signature-image {
         display: block;
-        width: 42mm;
-        height: 16mm;
+        width: 64mm;
+        height: 24mm;
         object-fit: contain;
-        margin: 8mm auto 0;
+        margin: 5mm auto 0;
       }
       .signature-name {
         height: 8mm;
@@ -209,9 +209,6 @@
           </tr>
           <tr>
             <td colspan="2" class="signature-body">
-              Kepala Sub Bagian Umum<br>
-              Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
-              Provinsi DKI Jakarta
               @if ($approver?->signature_path)
                 <img class="cuti-signature-image" src="{{ asset('storage/' . $approver->signature_path) }}" alt="Tanda tangan {{ $approverName }}">
               @endif
