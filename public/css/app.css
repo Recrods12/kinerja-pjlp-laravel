@@ -333,7 +333,7 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 .dot.gray { background: #a3afab; }
 
 .task-row {
-  display: grid; grid-template-columns: 96px 1fr 140px 42px; gap: 10px; align-items: start;
+  display: grid; grid-template-columns: 96px 1fr 140px 76px; gap: 10px; align-items: start;
   padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.5);
 }
 .profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

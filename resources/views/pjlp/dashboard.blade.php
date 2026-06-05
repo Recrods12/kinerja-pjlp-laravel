@@ -96,7 +96,7 @@
                 <span>Keterangan</span>
                 <input name="note[]" value="{{ old('note.' . $loop->index, $row->note) }}" placeholder="Selesai">
               </label>
-              <button class="icon-action remove-row" type="button" title="Hapus baris">&times;</button>
+              <button class="ghost-action remove-row" type="button">Hapus</button>
             </div>
           @endforeach
         </div>
@@ -127,16 +127,18 @@
           <label><span>Jam Kerja</span><input name="work_time[]" placeholder="08.00"></label>
           <label><span>Uraian Tugas</span><textarea name="task[]" placeholder="Tuliskan kegiatan"></textarea></label>
           <label><span>Keterangan</span><input name="note[]" placeholder="Selesai"></label>
-          <button class="icon-action remove-row" type="button" title="Hapus baris">&times;</button>
+          <button class="ghost-action remove-row" type="button">Hapus</button>
         </div>
       `);
     });
     list.addEventListener('click', (event) => {
       if (!event.target.classList.contains('remove-row')) return;
       if (list.querySelectorAll('.task-row').length === 1) {
+        if (!confirm('Yakin ingin menghapus kolom ini?')) return;
         list.querySelectorAll('input, textarea').forEach((field) => field.value = '');
         return;
       }
+      if (!confirm('Yakin ingin menghapus kolom ini?')) return;
       event.target.closest('.task-row').remove();
     });
   </script>
