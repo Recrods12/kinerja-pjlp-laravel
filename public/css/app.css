@@ -24,9 +24,10 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background:
-    radial-gradient(circle at 8% 8%, rgba(189, 139, 46, .18), transparent 28%),
-    radial-gradient(circle at 88% 4%, rgba(46, 111, 174, .14), transparent 28%),
-    linear-gradient(135deg, #ecf4ef 0%, #f8f4e8 47%, #eef5f7 100%);
+    radial-gradient(circle at 12% 13%, rgba(189, 139, 46, .20), transparent 24%),
+    radial-gradient(circle at 83% 9%, rgba(46, 111, 174, .18), transparent 27%),
+    radial-gradient(circle at 54% 86%, rgba(20, 122, 85, .16), transparent 31%),
+    linear-gradient(135deg, #eef4f0 0%, #fbf8ef 45%, #edf6f7 100%);
 }
 body::before {
   content: "";
@@ -34,10 +35,21 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(20, 36, 31, .035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(20, 36, 31, .035) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.7), transparent 75%);
+    linear-gradient(rgba(20, 36, 31, .04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 36, 31, .04) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.78), transparent 80%);
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.36), transparent 38%, rgba(20,122,85,.06) 68%, transparent),
+    radial-gradient(circle at 50% 48%, rgba(255,255,255,.58), transparent 34%);
+  mix-blend-mode: soft-light;
+  opacity: .82;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -45,7 +57,25 @@ button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 h1, h2, p { margin-top: 0; }
 
-.auth-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.auth-shell::before {
+  content: "";
+  position: fixed;
+  width: min(1120px, 82vw);
+  height: min(620px, 72vh);
+  border: 1px solid rgba(255,255,255,.62);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.03)),
+    repeating-linear-gradient(90deg, rgba(20,36,31,.035) 0 1px, transparent 1px 94px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.52), 0 28px 90px rgba(20,36,31,.08);
+  transform: translateY(8px);
+}
 .auth-panel, .panel, .card {
   background: var(--surface);
   border: 1px solid rgba(255, 255, 255, .76);
@@ -58,6 +88,12 @@ h1, h2, p { margin-top: 0; }
   width: min(100%, 480px);
   padding: 34px;
   overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.94), rgba(255,255,255,.80)),
+    radial-gradient(circle at 18% 0%, rgba(189,139,46,.16), transparent 34%),
+    radial-gradient(circle at 100% 18%, rgba(46,111,174,.11), transparent 28%);
+  border-color: rgba(255,255,255,.88);
+  box-shadow: 0 32px 90px rgba(20, 36, 31, .18), 0 1px 0 rgba(255,255,255,.84) inset;
 }
 .auth-panel::before, .panel::before {
   content: "";

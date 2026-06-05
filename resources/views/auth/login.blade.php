@@ -29,11 +29,5 @@
       @enderror
       <button class="primary-action" type="submit">Masuk</button>
     </form>
-
-    <div class="demo-users">
-      <p>Akun demo setelah menjalankan seeder</p>
-      <span>PJLP: <strong>pjlp / pjlp123</strong></span>
-      <span>Admin: <strong>admin / admin123</strong></span>
-    </div>
   </section>
 @endsection
