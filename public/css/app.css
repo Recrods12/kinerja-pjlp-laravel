@@ -834,8 +834,17 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 }
 
 @media print {
-  html, body { background: white; }
-  body::before { display: none; }
+  html, body {
+    background: white !important;
+    color: #000 !important;
+  }
+  body::before,
+  body::after,
+  .auth-shell::before,
+  .auth-shell::after {
+    display: none !important;
+    content: none !important;
+  }
   .topbar,
   .report-actions,
   .notice {
@@ -852,15 +861,22 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
     position: static;
     width: 100%;
     padding: 0;
-    background: white;
+    color: #000 !important;
+    background: white !important;
     overflow: visible;
     border-radius: 0;
+  }
+  .report-preview {
+    background: white !important;
+    box-shadow: none !important;
   }
   .report-sheet {
     width: 278mm;
     height: 190mm;
     min-height: 0;
     position: relative;
+    color: #000 !important;
+    background: white !important;
     box-shadow: none;
     margin: 0 auto;
     padding: 0;
