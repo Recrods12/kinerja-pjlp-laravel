@@ -856,19 +856,27 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
     margin: 0;
     padding: 0;
     display: block;
+    visibility: hidden;
   }
   #print-area {
-    position: static;
+    position: absolute;
+    inset: 0 auto auto 0;
     width: 100%;
     padding: 0;
     color: #000 !important;
     background: white !important;
     overflow: visible;
     border-radius: 0;
+    visibility: visible;
+  }
+  #print-area * {
+    visibility: visible;
   }
   .report-preview {
     background: white !important;
     box-shadow: none !important;
+    filter: none !important;
+    opacity: 1 !important;
   }
   .report-sheet {
     width: 278mm;
@@ -884,6 +892,12 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
     animation: none;
     page-break-inside: avoid;
     break-inside: avoid;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+  .report-sheet * {
+    filter: none !important;
+    opacity: 1 !important;
   }
   .report-preview.all-pages {
     display: block;
