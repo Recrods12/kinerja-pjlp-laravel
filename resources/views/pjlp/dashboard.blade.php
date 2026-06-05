@@ -96,7 +96,7 @@
                 <span>Keterangan</span>
                 <input name="note[]" value="{{ old('note.' . $loop->index, $row->note) }}" placeholder="Selesai">
               </label>
-              <button class="ghost-action remove-row" type="button">Hapus</button>
+              <button class="danger-action remove-row" type="button">Hapus</button>
             </div>
           @endforeach
         </div>
@@ -169,7 +169,7 @@
           <label><span>Jam Kerja</span><input name="work_time[]" placeholder="08.00"></label>
           <label><span>Uraian Tugas</span><textarea name="task[]" placeholder="Tuliskan kegiatan"></textarea></label>
           <label><span>Keterangan</span><input name="note[]" placeholder="Selesai"></label>
-          <button class="ghost-action remove-row" type="button">Hapus</button>
+          <button class="danger-action remove-row" type="button">Hapus</button>
         </div>
       `);
     });
