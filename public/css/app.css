@@ -776,6 +776,63 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   .topbar { align-items: flex-start; flex-direction: column; }
 }
 
+@media (max-width: 640px) {
+  body {
+    background:
+      linear-gradient(120deg, rgba(13, 111, 75, .42) 0 34%, transparent 34% 100%),
+      linear-gradient(286deg, rgba(44, 75, 82, .24) 0 25%, transparent 25% 100%),
+      linear-gradient(180deg, rgba(112, 178, 229, .34) 0%, rgba(245, 250, 248, .78) 44%, rgba(255, 248, 231, .88) 100%),
+      #edf5f1;
+  }
+  body::before {
+    background-size: 32px 32px, 32px 32px, 210px 100%;
+    opacity: .72;
+  }
+  body::after {
+    opacity: .58;
+  }
+  .auth-shell {
+    align-items: center;
+    padding: 18px;
+  }
+  .auth-shell::before {
+    left: -34vw;
+    bottom: -18vh;
+    width: 92vw;
+    height: 72vh;
+    opacity: .58;
+    transform: skewX(-6deg);
+  }
+  .auth-shell::after {
+    right: -24vw;
+    top: 5vh;
+    width: 64vw;
+    height: 64vh;
+    opacity: .38;
+  }
+  .auth-panel {
+    width: 100%;
+    padding: 26px 20px;
+    box-shadow: 0 26px 70px rgba(8, 58, 43, .24), 0 1px 0 rgba(255,255,255,.88) inset;
+  }
+  .brand-lockup {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .brand-mark {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  h1 {
+    font-size: 34px;
+  }
+  .eyebrow {
+    font-size: 10px;
+    line-height: 1.25;
+  }
+}
+
 @media print {
   html, body { background: white; }
   body::before { display: none; }
