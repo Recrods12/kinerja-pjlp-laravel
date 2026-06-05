@@ -109,8 +109,50 @@
     </section>
   </section>
 
+  <div class="confirm-overlay" id="delete-row-confirm" hidden>
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-row-title">
+      <div>
+        <p class="confirm-kicker">Konfirmasi Hapus</p>
+        <h3 id="delete-row-title">Yakin ingin menghapus kolom ini?</h3>
+        <p>Data pada baris ini akan dihapus dari catatan sebelum Anda menyimpan kinerja.</p>
+      </div>
+      <div class="confirm-actions">
+        <button class="ghost-action" type="button" data-confirm-cancel>Batal</button>
+        <button class="danger-action" type="button" data-confirm-delete>Hapus</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const list = document.querySelector('#task-list');
+    const confirmOverlay = document.querySelector('#delete-row-confirm');
+    const confirmCancel = confirmOverlay.querySelector('[data-confirm-cancel]');
+    const confirmDelete = confirmOverlay.querySelector('[data-confirm-delete]');
+    let pendingDeleteRow = null;
+
+    const openDeleteConfirm = (row) => {
+      pendingDeleteRow = row;
+      confirmOverlay.hidden = false;
+      confirmDelete.focus();
+    };
+
+    const closeDeleteConfirm = () => {
+      pendingDeleteRow = null;
+      confirmOverlay.hidden = true;
+    };
+
+    const deletePendingRow = () => {
+      if (!pendingDeleteRow) return;
+
+      if (list.querySelectorAll('.task-row').length === 1) {
+        pendingDeleteRow.querySelectorAll('input, textarea').forEach((field) => field.value = '');
+      } else {
+        pendingDeleteRow.remove();
+      }
+
+      closeDeleteConfirm();
+    };
+
     document.querySelectorAll('.month-jump-form select').forEach((select) => {
       select.addEventListener('change', () => {
         const form = select.closest('form');
@@ -132,14 +174,18 @@
       `);
     });
     list.addEventListener('click', (event) => {
-      if (!event.target.classList.contains('remove-row')) return;
-      if (list.querySelectorAll('.task-row').length === 1) {
-        if (!confirm('Yakin ingin menghapus kolom ini?')) return;
-        list.querySelectorAll('input, textarea').forEach((field) => field.value = '');
-        return;
-      }
-      if (!confirm('Yakin ingin menghapus kolom ini?')) return;
-      event.target.closest('.task-row').remove();
+      const removeButton = event.target.closest('.remove-row');
+      if (!removeButton) return;
+      openDeleteConfirm(removeButton.closest('.task-row'));
+    });
+
+    confirmCancel.addEventListener('click', closeDeleteConfirm);
+    confirmDelete.addEventListener('click', deletePendingRow);
+    confirmOverlay.addEventListener('click', (event) => {
+      if (event.target === confirmOverlay) closeDeleteConfirm();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !confirmOverlay.hidden) closeDeleteConfirm();
     });
   </script>
 @endsection
