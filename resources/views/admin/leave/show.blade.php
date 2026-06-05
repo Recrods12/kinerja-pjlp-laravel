@@ -27,6 +27,28 @@
       @endif
     </div>
 
+    <form class="form-stack admin-date-editor" method="post" action="{{ route('admin.leave.updateDates', $leaveRequest) }}">
+      @csrf
+      @method('PUT')
+      <div class="panel-subhead">
+        <strong>Ubah Tanggal Cuti</strong>
+        <span>Admin dapat mengubah tanggal cuti, termasuk tanggal yang sudah lewat.</span>
+      </div>
+      <div class="profile-grid">
+        <label>
+          <span>Mulai Tanggal</span>
+          <input type="date" name="start_date" value="{{ old('start_date', $leaveRequest->start_date->toDateString()) }}" required>
+          @error('start_date') <p class="error-text">{{ $message }}</p> @enderror
+        </label>
+        <label>
+          <span>Sampai Tanggal</span>
+          <input type="date" name="end_date" value="{{ old('end_date', $leaveRequest->end_date->toDateString()) }}" required>
+          @error('end_date') <p class="error-text">{{ $message }}</p> @enderror
+        </label>
+      </div>
+      <button class="ghost-action" type="submit">Simpan Tanggal</button>
+    </form>
+
     @if ($leaveRequest->isPending())
       <div class="approval-grid">
         <form class="form-stack" method="post" action="{{ route('admin.leave.approve', $leaveRequest) }}" onsubmit="return confirm('Setujui pengajuan cuti ini?')">

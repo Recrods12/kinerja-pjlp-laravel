@@ -36,12 +36,12 @@
         </label>
         <label>
           <span>Mulai Tanggal</span>
-          <input type="date" name="start_date" value="{{ old('start_date') }}" required>
+          <input type="date" name="start_date" value="{{ old('start_date') }}" min="{{ now()->toDateString() }}" required>
           @error('start_date') <p class="error-text">{{ $message }}</p> @enderror
         </label>
         <label>
           <span>Sampai Tanggal</span>
-          <input type="date" name="end_date" value="{{ old('end_date') }}" required>
+          <input type="date" name="end_date" value="{{ old('end_date') }}" min="{{ now()->toDateString() }}" required>
           @error('end_date') <p class="error-text">{{ $message }}</p> @enderror
         </label>
         <label class="full-width">

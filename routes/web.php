@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/cuti', [AdminLeaveRequestController::class, 'index'])->name('admin.leave.index');
         Route::get('/admin/cuti/export-excel', [AdminLeaveRequestController::class, 'exportExcel'])->name('admin.leave.exportExcel');
         Route::get('/admin/cuti/{leaveRequest}', [AdminLeaveRequestController::class, 'show'])->name('admin.leave.show');
+        Route::put('/admin/cuti/{leaveRequest}/tanggal', [AdminLeaveRequestController::class, 'updateDates'])->name('admin.leave.updateDates');
         Route::post('/admin/cuti/{leaveRequest}/setujui', [AdminLeaveRequestController::class, 'approve'])->name('admin.leave.approve');
         Route::post('/admin/cuti/{leaveRequest}/tolak', [AdminLeaveRequestController::class, 'reject'])->name('admin.leave.reject');
         Route::get('/admin/cuti/{leaveRequest}/cetak', [AdminLeaveRequestController::class, 'print'])->name('admin.leave.print');

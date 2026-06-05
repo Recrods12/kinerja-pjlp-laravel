@@ -37,13 +37,14 @@ class LeaveRequestController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'start_date' => ['required', 'date'],
+            'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'duration_unit' => ['required', 'in:hari,bulan,tahun'],
             'reason' => ['required', 'string', 'min:5', 'max:2000'],
         ], [
             'start_date.required' => 'Tanggal mulai cuti wajib diisi.',
             'start_date.date' => 'Tanggal mulai cuti tidak valid.',
+            'start_date.after_or_equal' => 'Tanggal mulai cuti tidak boleh sebelum hari ini.',
             'end_date.required' => 'Tanggal selesai cuti wajib diisi.',
             'end_date.date' => 'Tanggal selesai cuti tidak valid.',
             'end_date.after_or_equal' => 'Tanggal selesai cuti tidak boleh sebelum tanggal mulai.',
@@ -83,32 +84,22 @@ class LeaveRequestController extends Controller
                 ->withInput();
         }
 
-        $isPastLeave = $endDate->lt(now()->startOfDay());
-
-        DB::transaction(function () use ($request, $data, $totalDays, $isPastLeave) {
+        DB::transaction(function () use ($request, $data, $totalDays) {
             $user = User::query()
                 ->whereKey($request->user()->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($isPastLeave) {
-                $user->decrement('annual_leave_remaining', $totalDays);
-            }
-
             $user->leaveRequests()->create([
                 ...$data,
                 'total_days' => $totalDays,
-                'status' => $isPastLeave ? LeaveRequest::STATUS_APPROVED : LeaveRequest::STATUS_PENDING,
-                'admin_note' => $isPastLeave ? 'Cuti susulan untuk tanggal yang sudah lewat, otomatis tercatat disetujui.' : null,
-                'approved_at' => $isPastLeave ? now() : null,
+                'status' => LeaveRequest::STATUS_PENDING,
             ]);
         });
 
         return redirect()
             ->route('leave.index')
-            ->with('status', $isPastLeave
-                ? 'Cuti susulan berhasil dicatat dan otomatis disetujui.'
-                : 'Pengajuan cuti berhasil dikirim dan menunggu persetujuan admin.');
+            ->with('status', 'Pengajuan cuti berhasil dikirim dan menunggu persetujuan admin.');
     }
 
     public function show(Request $request, LeaveRequest $leaveRequest): View

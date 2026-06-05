@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Holiday;
 use App\Models\LeaveRequest;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -36,6 +38,61 @@ class AdminLeaveRequestController extends Controller
         $leaveRequest->load('user', 'approver');
 
         return view('admin.leave.show', compact('leaveRequest'));
+    }
+
+    public function updateDates(Request $request, LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $data = $request->validate([
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+        ], [
+            'start_date.required' => 'Tanggal mulai cuti wajib diisi.',
+            'start_date.date' => 'Tanggal mulai cuti tidak valid.',
+            'end_date.required' => 'Tanggal selesai cuti wajib diisi.',
+            'end_date.date' => 'Tanggal selesai cuti tidak valid.',
+            'end_date.after_or_equal' => 'Tanggal selesai cuti tidak boleh sebelum tanggal mulai.',
+        ]);
+
+        $startDate = Carbon::parse($data['start_date']);
+        $endDate = Carbon::parse($data['end_date']);
+        $totalDays = $this->workdayCount($startDate, $endDate);
+
+        if ($totalDays < 1) {
+            return back()
+                ->withErrors(['start_date' => 'Tanggal cuti harus berada pada hari kerja.'])
+                ->withInput();
+        }
+
+        try {
+            DB::transaction(function () use ($leaveRequest, $data, $totalDays) {
+                $leaveRequest = LeaveRequest::query()->lockForUpdate()->findOrFail($leaveRequest->id);
+                $user = $leaveRequest->user()->lockForUpdate()->firstOrFail();
+                $oldTotalDays = $leaveRequest->total_days;
+
+                if ($leaveRequest->status === LeaveRequest::STATUS_APPROVED) {
+                    $difference = $totalDays - $oldTotalDays;
+                    $remaining = $user->annual_leave_remaining - $difference;
+
+                    if ($remaining < 0) {
+                        throw ValidationException::withMessages(['end_date' => 'Sisa cuti PJLP tidak mencukupi untuk perubahan tanggal ini.']);
+                    }
+
+                    $user->forceFill([
+                        'annual_leave_remaining' => min($user->annual_leave_quota, $remaining),
+                    ])->save();
+                }
+
+                $leaveRequest->update([
+                    'start_date' => $data['start_date'],
+                    'end_date' => $data['end_date'],
+                    'total_days' => $totalDays,
+                ]);
+            });
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->withInput();
+        }
+
+        return back()->with('status', 'Tanggal cuti berhasil diperbarui.');
     }
 
     public function approve(Request $request, LeaveRequest $leaveRequest): RedirectResponse
@@ -142,5 +199,27 @@ class AdminLeaveRequestController extends Controller
                         ->orWhere('jabatan', 'like', "%{$search}%");
                 });
             });
+    }
+
+    private function workdayCount(Carbon $startDate, Carbon $endDate): int
+    {
+        $holidayDates = Holiday::query()
+            ->whereBetween('holiday_date', [$startDate->copy()->startOfDay(), $endDate->copy()->startOfDay()])
+            ->pluck('holiday_date')
+            ->map(fn ($date) => Carbon::parse($date)->toDateString())
+            ->all();
+
+        $count = 0;
+        $date = $startDate->copy();
+
+        while ($date->lte($endDate)) {
+            if (! $date->isWeekend() && ! in_array($date->toDateString(), $holidayDates, true)) {
+                $count++;
+            }
+
+            $date->addDay();
+        }
+
+        return $count;
     }
 }
