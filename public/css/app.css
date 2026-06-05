@@ -209,6 +209,27 @@ textarea { min-height: 96px; resize: vertical; }
 .topbar .ghost-action { background: rgba(255,255,255,.1); color: white; border-color: rgba(255,255,255,.18); }
 .topbar-actions, .actions-row, .report-actions, .admin-toolbar, .row-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .topbar-actions { justify-content: flex-end; }
+.topbar-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 8px;
+  background: rgba(255,255,255,.1);
+  color: white;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+}
+.topbar-toggle span {
+  width: 11px;
+  height: 11px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(3px) rotate(225deg);
+  transition: transform .2s ease;
+}
 .admin-toolbar { justify-content: flex-end; }
 .row-actions { gap: 8px; }
 .admin-filter-bar {
@@ -832,12 +853,23 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
     line-height: 1.25;
   }
   .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    align-items: start;
     padding: 14px 16px;
     gap: 14px;
   }
   .topbar-title {
     width: 100%;
     align-items: flex-start;
+    grid-column: 1;
+    min-width: 0;
+  }
+  .topbar-toggle {
+    display: inline-flex;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
   }
   .topbar-title strong {
     font-size: 17px;
@@ -848,13 +880,32 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   }
   .topbar-actions {
     width: 100%;
+    grid-column: 1 / -1;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+    max-height: 280px;
+    opacity: 1;
+    overflow: hidden;
+    transform: translateY(0);
+    transition: max-height .24s ease, opacity .18s ease, transform .18s ease, margin .18s ease;
   }
   .topbar-actions form,
   .topbar-actions .ghost-action {
     width: 100%;
+  }
+  .topbar.is-collapsed {
+    gap: 8px;
+  }
+  .topbar.is-collapsed .topbar-actions {
+    max-height: 0;
+    margin-top: -8px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px);
+  }
+  .topbar.is-collapsed .topbar-toggle span {
+    transform: translateY(-2px) rotate(45deg);
   }
   .workspace {
     padding: 14px;
