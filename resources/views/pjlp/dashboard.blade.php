@@ -123,12 +123,53 @@
     </div>
   </div>
 
+  <div class="confirm-overlay" id="leave-page-confirm" hidden>
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="leave-page-title">
+      <div>
+        <p class="confirm-kicker">Kinerja Belum Disimpan</p>
+        <h3 id="leave-page-title">Simpan kinerja sebelum meninggalkan halaman?</h3>
+        <p>Perubahan pada catatan tanggal ini belum tersimpan. Simpan sekarang agar data kinerja tidak hilang.</p>
+      </div>
+      <div class="confirm-actions">
+        <button class="ghost-action" type="button" data-leave-cancel>Tetap di Halaman</button>
+        <button class="danger-action" type="button" data-leave-discard>Lanjut tanpa Simpan</button>
+        <button class="primary-action" type="button" data-leave-save>Simpan Kinerja</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    const entryForm = document.querySelector('#entry-form');
     const list = document.querySelector('#task-list');
     const confirmOverlay = document.querySelector('#delete-row-confirm');
     const confirmCancel = confirmOverlay.querySelector('[data-confirm-cancel]');
     const confirmDelete = confirmOverlay.querySelector('[data-confirm-delete]');
+    const leaveOverlay = document.querySelector('#leave-page-confirm');
+    const leaveCancel = leaveOverlay.querySelector('[data-leave-cancel]');
+    const leaveDiscard = leaveOverlay.querySelector('[data-leave-discard]');
+    const leaveSave = leaveOverlay.querySelector('[data-leave-save]');
     let pendingDeleteRow = null;
+    let pendingNavigationUrl = null;
+    let pendingNavigationForm = null;
+    let isSubmittingEntry = false;
+
+    const formSnapshot = () => JSON.stringify(Array.from(new FormData(entryForm).entries()));
+    let initialEntrySnapshot = formSnapshot();
+
+    const hasUnsavedEntryChanges = () => formSnapshot() !== initialEntrySnapshot;
+
+    const openLeaveConfirm = (url, form = null) => {
+      pendingNavigationUrl = url;
+      pendingNavigationForm = form;
+      leaveOverlay.hidden = false;
+      leaveSave.focus();
+    };
+
+    const closeLeaveConfirm = () => {
+      pendingNavigationUrl = null;
+      pendingNavigationForm = null;
+      leaveOverlay.hidden = true;
+    };
 
     const openDeleteConfirm = (row) => {
       pendingDeleteRow = row;
@@ -153,13 +194,56 @@
       closeDeleteConfirm();
     };
 
+    entryForm.addEventListener('submit', () => {
+      isSubmittingEntry = true;
+    });
+
+    window.addEventListener('beforeunload', (event) => {
+      if (!isSubmittingEntry && hasUnsavedEntryChanges()) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('a[href]');
+      if (!link || event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (link.target === '_blank' || link.hasAttribute('download')) return;
+
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+
+      const nextUrl = new URL(href, window.location.href);
+      if (nextUrl.href === window.location.href || !hasUnsavedEntryChanges()) return;
+
+      event.preventDefault();
+      openLeaveConfirm(nextUrl.href);
+    });
+
+    document.addEventListener('submit', (event) => {
+      const form = event.target;
+      if (form === entryForm || isSubmittingEntry || !hasUnsavedEntryChanges()) return;
+
+      event.preventDefault();
+      openLeaveConfirm(null, form);
+    });
+
     document.querySelectorAll('.month-jump-form select').forEach((select) => {
       select.addEventListener('change', () => {
         const form = select.closest('form');
         const month = form.querySelector('[name="month"]').value;
         const year = form.querySelector('[name="year"]').value;
         form.querySelector('[name="date"]').value = `${year}-${String(month).padStart(2, '0')}-01`;
-        form.submit();
+
+        if (!hasUnsavedEntryChanges()) {
+          form.submit();
+          return;
+        }
+
+        const nextUrl = new URL(form.action, window.location.href);
+        new FormData(form).forEach((value, key) => nextUrl.searchParams.set(key, value));
+        openLeaveConfirm(nextUrl.href);
       });
     });
 
@@ -184,8 +268,30 @@
     confirmOverlay.addEventListener('click', (event) => {
       if (event.target === confirmOverlay) closeDeleteConfirm();
     });
+    leaveCancel.addEventListener('click', closeLeaveConfirm);
+    leaveDiscard.addEventListener('click', () => {
+      isSubmittingEntry = true;
+
+      if (pendingNavigationForm) {
+        pendingNavigationForm.submit();
+        return;
+      }
+
+      if (pendingNavigationUrl) {
+        window.location.href = pendingNavigationUrl;
+      }
+    });
+    leaveSave.addEventListener('click', () => {
+      isSubmittingEntry = true;
+      entryForm.requestSubmit();
+    });
+    leaveOverlay.addEventListener('click', (event) => {
+      if (event.target === leaveOverlay) closeLeaveConfirm();
+    });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !confirmOverlay.hidden) closeDeleteConfirm();
+      if (event.key !== 'Escape') return;
+      if (!confirmOverlay.hidden) closeDeleteConfirm();
+      if (!leaveOverlay.hidden) closeLeaveConfirm();
     });
   </script>
 @endsection
