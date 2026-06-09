@@ -1135,6 +1135,31 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   color: var(--blue);
   font-weight: 900;
 }
+.camera-upload {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.64);
+}
+.camera-trigger {
+  justify-content: center;
+}
+.camera-upload small {
+  color: var(--muted);
+  font-weight: 700;
+}
+.sr-only-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
 .selfie-preview,
 .attendance-selfie {
   width: 100%;

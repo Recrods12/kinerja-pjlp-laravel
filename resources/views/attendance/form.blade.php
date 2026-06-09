@@ -69,7 +69,11 @@
 
         <label>
           <span>Foto Selfie</span>
-          <input type="file" name="selfie" accept="image/*" capture="user" required data-selfie-input>
+          <div class="camera-upload">
+            <button class="ghost-action camera-trigger" type="button" data-camera-trigger>Ambil Foto Selfie</button>
+            <small data-selfie-name>Belum ada foto. Di HP tombol ini akan membuka kamera.</small>
+          </div>
+          <input class="sr-only-file" type="file" name="selfie" accept="image/*" capture="user" required data-selfie-input>
         </label>
         <img class="selfie-preview" alt="Preview selfie" data-selfie-preview hidden>
 
@@ -123,11 +127,17 @@
 
     const selfieInput = document.querySelector('[data-selfie-input]');
     const selfiePreview = document.querySelector('[data-selfie-preview]');
+    const cameraTrigger = document.querySelector('[data-camera-trigger]');
+    const selfieName = document.querySelector('[data-selfie-name]');
+
+    cameraTrigger?.addEventListener('click', () => selfieInput?.click());
+
     selfieInput?.addEventListener('change', () => {
       const file = selfieInput.files?.[0];
       if (!file) return;
       selfiePreview.src = URL.createObjectURL(file);
       selfiePreview.hidden = false;
+      selfieName.textContent = file.name || 'Foto selfie sudah dipilih.';
     });
   </script>
 @endsection
