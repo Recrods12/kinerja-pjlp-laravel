@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/kinerja', [PerformanceEntryController::class, 'store'])->name('entries.store');
         Route::get('/laporan', [ReportController::class, 'show'])->name('reports.show');
         Route::get('/cuti', [LeaveRequestController::class, 'index'])->name('leave.index');
+        Route::get('/cuti/kalender', [LeaveRequestController::class, 'calendar'])->name('leave.calendar');
         Route::get('/cuti/ajukan', [LeaveRequestController::class, 'create'])->name('leave.create');
         Route::post('/cuti', [LeaveRequestController::class, 'store'])->name('leave.store');
         Route::get('/cuti/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leave.show');
@@ -34,6 +35,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/cuti', [AdminLeaveRequestController::class, 'index'])->name('admin.leave.index');
+        Route::get('/admin/cuti/kalender', [AdminLeaveRequestController::class, 'calendar'])->name('admin.leave.calendar');
         Route::get('/admin/cuti/export-excel', [AdminLeaveRequestController::class, 'exportExcel'])->name('admin.leave.exportExcel');
         Route::get('/admin/cuti/{leaveRequest}', [AdminLeaveRequestController::class, 'show'])->name('admin.leave.show');
         Route::put('/admin/cuti/{leaveRequest}/tanggal', [AdminLeaveRequestController::class, 'updateDates'])->name('admin.leave.updateDates');

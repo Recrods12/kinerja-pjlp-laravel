@@ -27,8 +27,8 @@
                 ['label' => 'Export Laporan', 'route' => route('admin.export.csv'), 'active' => request()->routeIs('admin.export.csv')],
               ],
               'Cuti' => [
-                ['label' => 'Pengajuan Cuti', 'route' => route('admin.leave.index'), 'active' => request()->routeIs('admin.leave.*')],
-                ['label' => 'Kalender Cuti', 'route' => route('admin.leave.index'), 'active' => false],
+                ['label' => 'Pengajuan Cuti', 'route' => route('admin.leave.index'), 'active' => request()->routeIs('admin.leave.index') || request()->routeIs('admin.leave.show') || request()->routeIs('admin.leave.print')],
+                ['label' => 'Kalender Cuti', 'route' => route('admin.leave.calendar'), 'active' => request()->routeIs('admin.leave.calendar')],
               ],
               'Master Data' => [
                 ['label' => 'Kelola User', 'route' => route('admin.users.index'), 'active' => request()->routeIs('admin.users.*')],
@@ -50,6 +50,7 @@
               'Cuti' => [
                 ['label' => 'Ajukan Cuti', 'route' => route('leave.create'), 'active' => request()->routeIs('leave.create')],
                 ['label' => 'Riwayat Cuti', 'route' => route('leave.index'), 'active' => request()->routeIs('leave.index') || request()->routeIs('leave.show')],
+                ['label' => 'Kalender Cuti', 'route' => route('leave.calendar'), 'active' => request()->routeIs('leave.calendar')],
               ],
             ];
       @endphp

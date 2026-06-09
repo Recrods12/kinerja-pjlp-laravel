@@ -768,6 +768,144 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 .dot.red { background: var(--red); }
 .dot.gray { background: #a3afab; }
 
+.leave-calendar-panel .month-nav {
+  align-items: center;
+}
+
+.leave-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.leave-weekday {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 950;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.leave-calendar-day {
+  min-height: 132px;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72);
+}
+
+.leave-calendar-day.empty {
+  visibility: hidden;
+}
+
+.leave-calendar-day.today {
+  border-color: rgba(189, 139, 46, .42);
+  box-shadow: inset 0 0 0 2px rgba(189, 139, 46, .16);
+}
+
+.leave-calendar-day.has-leave,
+.leave-calendar-day.done {
+  background: linear-gradient(145deg, rgba(223, 246, 232, .9), rgba(255, 255, 255, .74));
+  border-color: rgba(20, 122, 85, .24);
+}
+
+.leave-calendar-day.pending {
+  background: linear-gradient(145deg, rgba(255, 246, 224, .92), rgba(255, 255, 255, .74));
+  border-color: rgba(189, 139, 46, .26);
+}
+
+.leave-calendar-day.missing {
+  background: linear-gradient(145deg, rgba(255, 231, 227, .86), rgba(255, 255, 255, .74));
+  border-color: rgba(200, 67, 67, .22);
+}
+
+.leave-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.leave-day-head strong {
+  color: var(--green-2);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.leave-day-head span {
+  border-radius: 999px;
+  padding: 4px 7px;
+  background: rgba(20, 122, 85, .12);
+  color: #105c3b;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.leave-day-list {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.leave-day-list a,
+.leave-day-list em {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 8px;
+  padding: 6px 7px;
+  background: rgba(255, 255, 255, .72);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.leave-day-list small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.leave-day-list em {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.leave-calendar-list {
+  display: grid;
+  gap: 10px;
+}
+
+.leave-list-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) minmax(220px, .8fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .62);
+}
+
+.leave-list-card strong,
+.leave-list-card small {
+  display: block;
+}
+
+.leave-list-card small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .task-row {
   display: grid; grid-template-columns: 96px 1fr 140px 76px; gap: 10px; align-items: start;
   padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.5);
@@ -1521,6 +1659,27 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
     min-width: 0;
     width: 100%;
     grid-template-columns: minmax(0, 1fr) 78px;
+  }
+  .leave-calendar-panel .month-nav {
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+  }
+  .leave-calendar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .leave-weekday {
+    display: none;
+  }
+  .leave-calendar-day {
+    min-height: 116px;
+  }
+  .leave-calendar-day.empty {
+    display: none;
+  }
+  .leave-list-card {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+  .leave-list-card > span:last-child {
+    grid-column: 2;
   }
   .admin-filter-bar {
     padding: 12px;

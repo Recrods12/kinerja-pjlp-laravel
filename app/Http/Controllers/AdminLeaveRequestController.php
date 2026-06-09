@@ -41,6 +41,40 @@ class AdminLeaveRequestController extends Controller
         return view('admin.leave.show', compact('leaveRequest'));
     }
 
+    public function calendar(Request $request): View
+    {
+        $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
+        $yearNumber = max(2020, min(2100, (int) $request->query('year', now()->year)));
+        $month = Carbon::create($yearNumber, $monthNumber, 1)->startOfMonth();
+        $monthEnd = $month->copy()->endOfMonth();
+
+        $leaveRequests = LeaveRequest::query()
+            ->with('user')
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereDate('start_date', '<=', $monthEnd)
+            ->whereDate('end_date', '>=', $month)
+            ->orderBy('start_date')
+            ->orderBy('end_date')
+            ->get();
+
+        $calendarDays = $this->buildCalendarDays($month, $leaveRequests);
+        $monthNames = $this->monthNames();
+
+        $summary = [
+            'approved' => $leaveRequests->count(),
+            'people' => $leaveRequests->pluck('user_id')->unique()->count(),
+            'active_today' => $leaveRequests->filter(function (LeaveRequest $leaveRequest) {
+                $today = now()->toDateString();
+
+                return $leaveRequest->start_date->toDateString() <= $today
+                    && $leaveRequest->end_date->toDateString() >= $today;
+            })->count(),
+            'pending' => LeaveRequest::where('status', LeaveRequest::STATUS_PENDING)->count(),
+        ];
+
+        return view('admin.leave.calendar', compact('calendarDays', 'leaveRequests', 'month', 'monthNames', 'summary'));
+    }
+
     public function updateDates(Request $request, LeaveRequest $leaveRequest): RedirectResponse
     {
         $data = $request->validate([
@@ -201,6 +235,36 @@ class AdminLeaveRequestController extends Controller
                         ->orWhere('jabatan', 'like', "%{$search}%");
                 });
             });
+    }
+
+    private function buildCalendarDays(Carbon $month, $leaveRequests): array
+    {
+        $days = [];
+        $offset = $month->copy()->startOfMonth()->dayOfWeek;
+
+        for ($blank = 0; $blank < $offset; $blank++) {
+            $days[] = ['date' => null, 'requests' => collect()];
+        }
+
+        for ($day = 1; $day <= $month->daysInMonth; $day++) {
+            $date = $month->copy()->day($day);
+            $dateString = $date->toDateString();
+
+            $days[] = [
+                'date' => $date,
+                'requests' => $leaveRequests->filter(function (LeaveRequest $leaveRequest) use ($dateString) {
+                    return $leaveRequest->start_date->toDateString() <= $dateString
+                        && $leaveRequest->end_date->toDateString() >= $dateString;
+                })->values(),
+            ];
+        }
+
+        return $days;
+    }
+
+    private function monthNames(): array
+    {
+        return [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
     }
 
     private function workdayCount(Carbon $startDate, Carbon $endDate): int
