@@ -8,13 +8,32 @@
   $workDateSet = array_flip($workDates);
   $today = now()->startOfDay();
   $rows = $entries->count() ? $entries : collect([(object) ['work_time' => '', 'task' => '', 'note' => '']]);
+  $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+  $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  $shortDayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  $monthLabel = $monthNames[$month->month] . ' ' . $month->year;
+  $selectedDateLabel = $selectedDate->format('d') . ' ' . $monthNames[$selectedDate->month] . ' ' . $selectedDate->year;
+  $formatDate = fn ($date) => \Carbon\Carbon::parse($date)->format('d') . ' ' . $monthNames[\Carbon\Carbon::parse($date)->month] . ' ' . \Carbon\Carbon::parse($date)->year;
 @endphp
 
 @section('content')
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Dashboard PJLP</p>
+      <h1>Selamat datang, {{ $user->name }}</h1>
+      <p class="muted">Pantau kalender, catat kinerja harian, dan cek status cuti dari satu panel.</p>
+    </div>
+    <div class="page-actions">
+      <a class="primary-action" href="{{ route('leave.create') }}">Ajukan Cuti</a>
+      <a class="ghost-action" href="{{ route('leave.index') }}">Riwayat Cuti</a>
+    </div>
+  </section>
+
   <section class="summary-strip">
-    <article class="card stat"><strong>{{ $stats['done'] }}</strong><span>Hari sudah diisi bulan ini</span></article>
-    <article class="card stat"><strong>{{ $stats['missing'] }}</strong><span>Hari belum diisi sampai hari ini</span></article>
-    <article class="card stat"><strong>{{ $entries->count() }}</strong><span>Kegiatan pada {{ $selectedDate->translatedFormat('d F Y') }}</span></article>
+    <article class="card stat modern-stat green"><i>OK</i><strong>{{ $stats['done'] }}</strong><span>Hari sudah diisi bulan ini</span><small>{{ $monthLabel }}</small></article>
+    <article class="card stat modern-stat gold"><i>BL</i><strong>{{ $stats['missing'] }}</strong><span>Hari belum diisi sampai hari ini</span><small>Perlu dilengkapi</small></article>
+    <article class="card stat modern-stat blue"><i>KG</i><strong>{{ $entries->count() }}</strong><span>Kegiatan pada {{ $selectedDateLabel }}</span><small>{{ $dayNames[$selectedDate->dayOfWeek] }}</small></article>
+    <article class="card stat modern-stat red"><i>CT</i><strong>{{ $leaveSummary['pending'] ?? 0 }}</strong><span>Pengajuan cuti menunggu</span><small>Perlu dipantau</small></article>
   </section>
 
   <section class="dashboard-grid">
@@ -26,7 +45,7 @@
           <form class="month-jump-form" method="get" action="{{ route('dashboard') }}">
             <select name="month" aria-label="Pilih bulan">
               @for ($monthNumber = 1; $monthNumber <= 12; $monthNumber++)
-                <option value="{{ $monthNumber }}" @selected($month->month === $monthNumber)>{{ \Carbon\Carbon::create($month->year, $monthNumber, 1)->translatedFormat('F') }}</option>
+                <option value="{{ $monthNumber }}" @selected($month->month === $monthNumber)>{{ $monthNames[$monthNumber] }}</option>
               @endfor
             </select>
             <select name="year" aria-label="Pilih tahun">
@@ -41,7 +60,7 @@
       </div>
 
       <div class="calendar-grid">
-        @foreach (['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] as $day)
+        @foreach ($shortDayNames as $day)
           <div class="weekday">{{ $day }}</div>
         @endforeach
         @for ($i = 0; $i < $month->copy()->startOfMonth()->dayOfWeek; $i++)
@@ -73,7 +92,7 @@
     <section class="panel">
       <div class="panel-header">
         <div>
-          <h2>Catatan {{ $selectedDate->translatedFormat('d F Y') }}</h2>
+          <h2>Catatan {{ $selectedDateLabel }}</h2>
           <p class="muted">Isi uraian tugas harian, lalu simpan. Baris kosong tidak akan disimpan.</p>
         </div>
       </div>
@@ -107,6 +126,49 @@
         </div>
       </form>
     </section>
+  </section>
+
+  <section class="dashboard-board user-board">
+    <article class="panel insight-panel">
+      <div class="panel-header compact">
+        <div>
+          <h2>Status Pengajuan Cuti</h2>
+          <p class="muted">Riwayat cuti terbaru Anda.</p>
+        </div>
+        <a class="ghost-action" href="{{ route('leave.index') }}">Lihat Semua</a>
+      </div>
+      <div class="mini-list">
+        @forelse ($recentLeaveRequests as $leave)
+          <a class="mini-item" href="{{ route('leave.show', $leave) }}">
+            <span class="avatar small">C</span>
+            <span>
+              <strong>{{ $leave->reason }}</strong>
+              <small>{{ $formatDate($leave->start_date) }} - {{ $formatDate($leave->end_date) }}</small>
+            </span>
+            <em class="status-pill {{ $leave->status === 'approved' ? 'done' : ($leave->status === 'rejected' ? 'missing' : 'pending') }}">
+              {{ $leave->status === 'approved' ? 'Disetujui' : ($leave->status === 'rejected' ? 'Ditolak' : 'Menunggu') }}
+            </em>
+          </a>
+        @empty
+          <p class="muted">Belum ada pengajuan cuti.</p>
+        @endforelse
+      </div>
+    </article>
+
+    <article class="panel insight-panel">
+      <div class="panel-header compact">
+        <div>
+          <h2>Quick Action</h2>
+          <p class="muted">Akses cepat untuk pekerjaan harian.</p>
+        </div>
+      </div>
+      <div class="quick-grid">
+        <a class="quick-card green" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}"><strong>Lihat Laporan</strong><span>Preview kinerja tanggal ini</span></a>
+        <a class="quick-card gold" href="{{ route('leave.create') }}"><strong>Ajukan Cuti</strong><span>Buat pengajuan cuti baru</span></a>
+        <a class="quick-card blue" href="{{ route('leave.index') }}"><strong>Riwayat Cuti</strong><span>{{ $leaveSummary['approved'] ?? 0 }} disetujui, {{ $leaveSummary['rejected'] ?? 0 }} ditolak</span></a>
+        <a class="quick-card red" href="#entry-form"><strong>Isi Kinerja</strong><span>Simpan catatan harian</span></a>
+      </div>
+    </article>
   </section>
 
   <div class="confirm-overlay" id="delete-row-confirm" hidden>

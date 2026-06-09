@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PerformanceEntry;
 use App\Models\Holiday;
+use App\Models\LeaveRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -40,6 +41,12 @@ class DashboardController extends Controller
             'holidayDates' => $this->holidayDatesForMonth($month),
             'workDates' => $this->workDatesForMonth($user, $month),
             'stats' => $this->monthStats($user, $month),
+            'leaveSummary' => [
+                'pending' => $user->leaveRequests()->where('status', LeaveRequest::STATUS_PENDING)->count(),
+                'approved' => $user->leaveRequests()->where('status', LeaveRequest::STATUS_APPROVED)->count(),
+                'rejected' => $user->leaveRequests()->where('status', LeaveRequest::STATUS_REJECTED)->count(),
+            ],
+            'recentLeaveRequests' => $user->leaveRequests()->latest()->limit(3)->get(),
         ]);
     }
 
@@ -109,6 +116,31 @@ class DashboardController extends Controller
             'jobRoles' => $jobRoles,
             'selectedRole' => $selectedRole,
             'search' => $search,
+            'recentEntries' => PerformanceEntry::query()
+                ->with('user')
+                ->whereBetween('work_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                ->latest('work_date')
+                ->latest('updated_at')
+                ->limit(5)
+                ->get(),
+            'recentLeaveRequests' => LeaveRequest::query()
+                ->with('user')
+                ->latest()
+                ->limit(5)
+                ->get(),
+            'roleSummaries' => collect($jobRoles)->map(function (string $jobRole) use ($pjlpUsers) {
+                $users = $pjlpUsers->where('jabatan', $jobRole);
+                $done = $users->sum(fn (User $user) => $user->stats['done']);
+                $missing = $users->sum(fn (User $user) => $user->stats['missing']);
+                $total = $done + $missing;
+
+                return [
+                    'name' => $jobRole,
+                    'done' => $done,
+                    'total' => $total,
+                    'percentage' => $total > 0 ? (int) round(($done / $total) * 100) : 0,
+                ];
+            })->values(),
         ]);
     }
 

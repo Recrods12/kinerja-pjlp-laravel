@@ -9,34 +9,105 @@
   </head>
   <body>
     @auth
-      <header class="topbar">
-        <a class="topbar-title" href="{{ route('dashboard') }}">
-          <span class="brand-mark">K</span>
-          <span>
-            <strong>Kinerja Harian PJLP</strong>
-            <small>{{ auth()->user()->name }} &middot; {{ strtoupper(auth()->user()->role) }}</small>
-          </span>
-        </a>
-        <button class="topbar-toggle" type="button" aria-expanded="true" aria-controls="site-nav" aria-label="Tutup menu" data-topbar-toggle>
-          <span aria-hidden="true"></span>
-        </button>
-        <nav class="topbar-actions" id="site-nav">
-          @if (auth()->user()->role === 'pjlp')
-            <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
-            <a class="ghost-action" href="{{ route('leave.index') }}">Cuti</a>
-            <a class="ghost-action" href="{{ route('profile.edit') }}">Profil</a>
-          @elseif (auth()->user()->role === 'admin')
-            <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
-            <a class="ghost-action" href="{{ route('admin.leave.index') }}">Cuti</a>
-            <a class="ghost-action" href="{{ route('admin.users.index') }}">Kelola User</a>
-            <a class="ghost-action" href="{{ route('profile.edit') }}">Profil</a>
-          @endif
-          <form method="post" action="{{ route('logout') }}">
+      @php
+        $authUser = auth()->user();
+        $isAdmin = $authUser->role === 'admin';
+        $initials = collect(explode(' ', trim($authUser->name)))
+          ->filter()
+          ->map(fn ($part) => \Illuminate\Support\Str::substr($part, 0, 1))
+          ->take(2)
+          ->implode('') ?: 'K';
+        $sidebarGroups = $isAdmin
+          ? [
+              'Menu' => [
+                ['label' => 'Dashboard', 'route' => route('dashboard'), 'active' => request()->routeIs('dashboard')],
+              ],
+              'Kinerja' => [
+                ['label' => 'All Kinerja Bulanan', 'route' => route('dashboard') . '#monthly', 'active' => false],
+                ['label' => 'Export Laporan', 'route' => route('admin.export.csv'), 'active' => request()->routeIs('admin.export.csv')],
+              ],
+              'Cuti' => [
+                ['label' => 'Pengajuan Cuti', 'route' => route('admin.leave.index'), 'active' => request()->routeIs('admin.leave.*')],
+                ['label' => 'Kalender Cuti', 'route' => route('admin.leave.index'), 'active' => false],
+              ],
+              'Master Data' => [
+                ['label' => 'Kelola User', 'route' => route('admin.users.index'), 'active' => request()->routeIs('admin.users.*')],
+                ['label' => 'Kelola Libur', 'route' => route('admin.holidays.index'), 'active' => request()->routeIs('admin.holidays.*')],
+                ['label' => 'Data Driver', 'route' => route('dashboard', ['jabatan' => 'Driver']), 'active' => request('jabatan') === 'Driver'],
+                ['label' => 'Data Kebersihan', 'route' => route('dashboard', ['jabatan' => 'Kebersihan']), 'active' => request('jabatan') === 'Kebersihan'],
+                ['label' => 'Data Keamanan', 'route' => route('dashboard', ['jabatan' => 'Keamanan']), 'active' => request('jabatan') === 'Keamanan'],
+                ['label' => 'Data Pelayanan Umum', 'route' => route('dashboard', ['jabatan' => 'Pelayanan Umum']), 'active' => request('jabatan') === 'Pelayanan Umum'],
+              ],
+            ]
+          : [
+              'Menu' => [
+                ['label' => 'Dashboard', 'route' => route('dashboard'), 'active' => request()->routeIs('dashboard')],
+              ],
+              'Kinerja' => [
+                ['label' => 'Kinerja Harian', 'route' => route('dashboard'), 'active' => request()->routeIs('dashboard')],
+                ['label' => 'Lihat Laporan', 'route' => route('reports.show', ['date' => now()->toDateString()]), 'active' => request()->routeIs('reports.show')],
+              ],
+              'Cuti' => [
+                ['label' => 'Ajukan Cuti', 'route' => route('leave.create'), 'active' => request()->routeIs('leave.create')],
+                ['label' => 'Riwayat Cuti', 'route' => route('leave.index'), 'active' => request()->routeIs('leave.index') || request()->routeIs('leave.show')],
+              ],
+            ];
+      @endphp
+
+      <div class="app-shell">
+        <aside class="app-sidebar" id="app-sidebar">
+          <a class="sidebar-brand" href="{{ route('dashboard') }}">
+            <span class="brand-mark">K</span>
+            <span>
+              <strong>Kinerja Harian PJLP</strong>
+              <small>{{ $authUser->name }} &middot; {{ strtoupper($authUser->role) }}</small>
+            </span>
+          </a>
+
+          <nav class="sidebar-nav" aria-label="Navigasi utama">
+            @foreach ($sidebarGroups as $groupLabel => $links)
+              <div class="sidebar-group">
+                <p>{{ $groupLabel }}</p>
+                @foreach ($links as $link)
+                  <a class="sidebar-link {{ $link['active'] ? 'active' : '' }}" href="{{ $link['route'] }}">
+                    <span>{{ \Illuminate\Support\Str::substr($link['label'], 0, 1) }}</span>
+                    {{ $link['label'] }}
+                  </a>
+                @endforeach
+              </div>
+            @endforeach
+            <div class="sidebar-group">
+              <p>Pengaturan</p>
+              <a class="sidebar-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.edit') }}">
+                <span>P</span>
+                Profil
+              </a>
+            </div>
+          </nav>
+
+          <form class="sidebar-logout" method="post" action="{{ route('logout') }}">
             @csrf
-            <button class="ghost-action" type="submit">Keluar</button>
+            <button type="submit">Keluar</button>
           </form>
-        </nav>
-      </header>
+        </aside>
+
+        <div class="sidebar-backdrop" data-sidebar-close></div>
+
+        <section class="content-shell">
+          <header class="content-topbar">
+            <button class="sidebar-toggle" type="button" aria-controls="app-sidebar" aria-expanded="false" data-sidebar-toggle>Menu</button>
+            <div class="topbar-context">
+              <strong>{{ $isAdmin ? 'Dashboard Admin' : 'Dashboard PJLP' }}</strong>
+              <span>{{ now()->format('d/m/Y') }}</span>
+            </div>
+            <a class="user-chip" href="{{ route('profile.edit') }}">
+              <span class="avatar">{{ $initials }}</span>
+              <span>
+                <strong>{{ $authUser->name }}</strong>
+                <small>{{ $authUser->jabatan ?: strtoupper($authUser->role) }}</small>
+              </span>
+            </a>
+          </header>
     @endauth
 
     <main class="@auth workspace @else auth-shell @endauth">
@@ -48,31 +119,30 @@
       @endif
       @yield('content')
     </main>
+
     @auth
+        </section>
+      </div>
       <script>
         (() => {
-          const topbar = document.querySelector('.topbar');
-          const toggle = document.querySelector('[data-topbar-toggle]');
-          const nav = document.querySelector('#site-nav');
+          const toggle = document.querySelector('[data-sidebar-toggle]');
+          const backdrop = document.querySelector('[data-sidebar-close]');
 
-          if (!topbar || !toggle || !nav) {
-            return;
-          }
-
-          const storageKey = 'pjlp-mobile-menu-collapsed';
-
-          const setCollapsed = (collapsed) => {
-            topbar.classList.toggle('is-collapsed', collapsed);
-            toggle.setAttribute('aria-expanded', String(!collapsed));
-            toggle.setAttribute('aria-label', collapsed ? 'Buka menu' : 'Tutup menu');
+          const setOpen = (open) => {
+            document.body.classList.toggle('sidebar-open', open);
+            toggle?.setAttribute('aria-expanded', String(open));
           };
 
-          setCollapsed(sessionStorage.getItem(storageKey) === '1');
+          toggle?.addEventListener('click', () => {
+            setOpen(!document.body.classList.contains('sidebar-open'));
+          });
 
-          toggle.addEventListener('click', () => {
-            const collapsed = !topbar.classList.contains('is-collapsed');
-            sessionStorage.setItem(storageKey, collapsed ? '1' : '0');
-            setCollapsed(collapsed);
+          backdrop?.addEventListener('click', () => setOpen(false));
+
+          document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+              setOpen(false);
+            }
           });
         })();
       </script>
