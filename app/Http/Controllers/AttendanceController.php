@@ -123,12 +123,6 @@ class AttendanceController extends Controller
         }
 
         if ($type === AttendanceRecord::TYPE_END) {
-            if (! $records->has(AttendanceRecord::TYPE_START)) {
-                throw ValidationException::withMessages([
-                    'attendance' => 'Absen akhir hanya bisa dilakukan setelah Absen Awal tersimpan.',
-                ]);
-            }
-
             if ($now->hour < 12) {
                 throw ValidationException::withMessages([
                     'attendance' => 'Absen akhir baru bisa dilakukan mulai pukul 12.00.',
@@ -159,8 +153,8 @@ class AttendanceController extends Controller
                 'Gunakan saat bertugas dari luar kantor atau saat mulai aktivitas lapangan.',
             ],
             AttendanceRecord::TYPE_END => [
-                'Absen akhir digunakan untuk mengakhiri aktivitas kerja.',
-                'Hanya bisa dilakukan setelah Absen Awal dan mulai pukul 12.00.',
+                'Absen akhir digunakan untuk mengakhiri aktivitas kerja atau tugas luar setelah absen finger print di kantor.',
+                'Bisa dilakukan mulai pukul 12.00, meskipun tidak ada Absen Awal di sistem.',
             ],
             AttendanceRecord::TYPE_FIELD => [
                 'Dinas luar digunakan jika bertugas di luar kantor seharian.',

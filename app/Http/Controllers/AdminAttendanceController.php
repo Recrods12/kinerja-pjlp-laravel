@@ -103,7 +103,7 @@ class AdminAttendanceController extends Controller
             return 'dinas_luar';
         }
 
-        if ($records->has(AttendanceRecord::TYPE_START) && $records->has(AttendanceRecord::TYPE_END)) {
+        if ($records->has(AttendanceRecord::TYPE_END)) {
             return 'hadir';
         }
 

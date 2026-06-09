@@ -28,7 +28,7 @@
   </section>
 
   <section class="summary-strip">
-    <article class="card stat modern-stat green"><i>HD</i><strong>{{ $summary['hadir'] }}</strong><span>Hadir</span><small>Awal + akhir</small></article>
+    <article class="card stat modern-stat green"><i>HD</i><strong>{{ $summary['hadir'] }}</strong><span>Hadir</span><small>Absen akhir tersimpan</small></article>
     <article class="card stat modern-stat blue"><i>DL</i><strong>{{ $summary['dinas_luar'] }}</strong><span>Dinas Luar</span><small>1x absen lapangan</small></article>
     <article class="card stat modern-stat gold"><i>IZ</i><strong>{{ $summary['izin'] }}</strong><span>Izin / Sakit</span><small>Cuti disetujui</small></article>
     <article class="card stat modern-stat red"><i>AF</i><strong>{{ $summary['alfa'] }}</strong><span>Alfa</span><small>Belum ada absensi</small></article>
