@@ -7,6 +7,9 @@ use App\Models\LeaveRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminAttendanceController extends Controller
 {
@@ -45,7 +48,7 @@ class AdminAttendanceController extends Controller
             ->get()
             ->keyBy('user_id');
 
-        $rows = $users->map(function (User $user) use ($records, $leaves) {
+        $summaryRows = $users->map(function (User $user) use ($records, $leaves) {
             $userRecords = $records->get($user->id, collect())->keyBy('type');
             $leave = $leaves->get($user->id);
             $rowStatus = $this->statusFor($userRecords, $leave);
@@ -60,6 +63,8 @@ class AdminAttendanceController extends Controller
             ];
         });
 
+        $rows = $summaryRows;
+
         if (in_array($status, ['hadir', 'dinas_luar', 'izin', 'alfa', 'belum_lengkap'], true)) {
             $rows = $rows->filter(fn ($row) => $row['status'] === $status)->values();
         }
@@ -70,11 +75,11 @@ class AdminAttendanceController extends Controller
             'status' => $status,
             'search' => $search,
             'summary' => [
-                'hadir' => $rows->where('status', 'hadir')->count(),
-                'dinas_luar' => $rows->where('status', 'dinas_luar')->count(),
-                'izin' => $rows->where('status', 'izin')->count(),
-                'alfa' => $rows->where('status', 'alfa')->count(),
-                'belum_lengkap' => $rows->where('status', 'belum_lengkap')->count(),
+                'hadir' => $summaryRows->where('status', 'hadir')->count(),
+                'dinas_luar' => $summaryRows->where('status', 'dinas_luar')->count(),
+                'izin' => $summaryRows->where('status', 'izin')->count(),
+                'alfa' => $summaryRows->where('status', 'alfa')->count(),
+                'belum_lengkap' => $summaryRows->where('status', 'belum_lengkap')->count(),
             ],
         ]);
     }
@@ -91,6 +96,75 @@ class AdminAttendanceController extends Controller
             'attendanceRecord' => $attendanceRecord->load('user'),
             'records' => $records,
         ]);
+    }
+
+    public function edit(AttendanceRecord $attendanceRecord)
+    {
+        return view('admin.attendance.form', [
+            'attendanceRecord' => $attendanceRecord->load('user'),
+            'labels' => AttendanceRecord::labels(),
+        ]);
+    }
+
+    public function update(Request $request, AttendanceRecord $attendanceRecord)
+    {
+        $data = $request->validate([
+            'type' => ['required', Rule::in(array_keys(AttendanceRecord::labels()))],
+            'work_date' => ['required', 'date'],
+            'recorded_time' => ['required', 'date_format:H:i'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'accuracy' => ['nullable', 'integer', 'min:0', 'max:50000'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'note' => ['nullable', 'string', 'max:1000'],
+            'selfie' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:12288'],
+        ], [
+            'selfie.mimes' => 'File selfie harus berupa gambar JPG, PNG, WEBP, HEIC, atau HEIF.',
+            'selfie.max' => 'Ukuran foto selfie maksimal 12 MB.',
+        ]);
+
+        $this->ensureUniqueSlot($attendanceRecord, $data);
+
+        $recordedAt = Carbon::parse($data['work_date'] . ' ' . $data['recorded_time']);
+
+        if ($request->hasFile('selfie')) {
+            $data['selfie_path'] = $this->replaceSelfie($attendanceRecord, $request);
+        }
+
+        unset($data['recorded_time'], $data['selfie']);
+
+        $attendanceRecord->update($data + [
+            'recorded_at' => $recordedAt,
+        ]);
+
+        return redirect()
+            ->route('admin.attendance.show', $attendanceRecord)
+            ->with('status', 'Data absensi berhasil diperbarui.');
+    }
+
+    private function ensureUniqueSlot(AttendanceRecord $attendanceRecord, array $data): void
+    {
+        $exists = AttendanceRecord::query()
+            ->where('user_id', $attendanceRecord->user_id)
+            ->whereDate('work_date', $data['work_date'])
+            ->where('type', $data['type'])
+            ->where('id', '!=', $attendanceRecord->id)
+            ->exists();
+
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'type' => 'User ini sudah memiliki absensi dengan jenis yang sama pada tanggal tersebut.',
+            ]);
+        }
+    }
+
+    private function replaceSelfie(AttendanceRecord $attendanceRecord, Request $request): string
+    {
+        if ($attendanceRecord->selfie_path) {
+            Storage::disk('public')->delete($attendanceRecord->selfie_path);
+        }
+
+        return $request->file('selfie')->store('attendance-selfies', 'public');
     }
 
     private function statusFor($records, ?LeaveRequest $leave): string

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AttendanceRecord;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
@@ -62,13 +63,14 @@ class AttendanceController extends Controller
             'accuracy' => ['nullable', 'integer', 'min:0', 'max:50000'],
             'address' => ['nullable', 'string', 'max:255'],
             'note' => [$type === AttendanceRecord::TYPE_FIELD ? 'required' : 'nullable', 'string', 'max:1000'],
-            'selfie' => ['required', 'image', 'max:4096'],
+            'selfie' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:12288'],
         ], [
             'latitude.required' => 'Lokasi GPS wajib aktif sebelum absensi.',
             'longitude.required' => 'Lokasi GPS wajib aktif sebelum absensi.',
             'note.required' => 'Tujuan atau keterangan dinas luar wajib diisi.',
             'selfie.required' => 'Foto selfie wajib diunggah untuk absensi.',
-            'selfie.image' => 'File selfie harus berupa gambar.',
+            'selfie.mimes' => 'File selfie harus berupa gambar JPG, PNG, WEBP, HEIC, atau HEIF.',
+            'selfie.max' => 'Ukuran foto selfie maksimal 12 MB.',
         ]);
 
         $data['selfie_path'] = $request->file('selfie')->store('attendance-selfies', 'public');
@@ -85,12 +87,73 @@ class AttendanceController extends Controller
             ->with('status', AttendanceRecord::labels()[$type] . ' berhasil disimpan.');
     }
 
+    public function show(Request $request, AttendanceRecord $attendanceRecord)
+    {
+        $this->ensureOwnedByUser($request, $attendanceRecord);
+
+        return view('attendance.show', [
+            'attendanceRecord' => $attendanceRecord->load('user'),
+        ]);
+    }
+
+    public function edit(Request $request, AttendanceRecord $attendanceRecord)
+    {
+        $this->ensureOwnedByUser($request, $attendanceRecord);
+
+        return view('attendance.edit', [
+            'attendanceRecord' => $attendanceRecord,
+        ]);
+    }
+
+    public function update(Request $request, AttendanceRecord $attendanceRecord)
+    {
+        $this->ensureOwnedByUser($request, $attendanceRecord);
+
+        $data = $request->validate([
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'accuracy' => ['nullable', 'integer', 'min:0', 'max:50000'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'note' => [$attendanceRecord->type === AttendanceRecord::TYPE_FIELD ? 'required' : 'nullable', 'string', 'max:1000'],
+            'selfie' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:12288'],
+        ], [
+            'note.required' => 'Tujuan atau keterangan dinas luar wajib diisi.',
+            'selfie.mimes' => 'File selfie harus berupa gambar JPG, PNG, WEBP, HEIC, atau HEIF.',
+            'selfie.max' => 'Ukuran foto selfie maksimal 12 MB.',
+        ]);
+
+        if ($request->hasFile('selfie')) {
+            $this->replaceSelfie($attendanceRecord, $request);
+        }
+
+        unset($data['selfie']);
+        $attendanceRecord->update($data);
+
+        return redirect()
+            ->route('attendance.show', $attendanceRecord)
+            ->with('status', 'Data absensi berhasil diperbarui.');
+    }
+
     private function recordsForDate($user, Carbon $date)
     {
         return $user->attendanceRecords()
             ->whereDate('work_date', $date)
             ->get()
             ->keyBy('type');
+    }
+
+    private function ensureOwnedByUser(Request $request, AttendanceRecord $attendanceRecord): void
+    {
+        abort_unless($attendanceRecord->user_id === $request->user()->id, 403);
+    }
+
+    private function replaceSelfie(AttendanceRecord $attendanceRecord, Request $request): void
+    {
+        if ($attendanceRecord->selfie_path) {
+            Storage::disk('public')->delete($attendanceRecord->selfie_path);
+        }
+
+        $attendanceRecord->selfie_path = $request->file('selfie')->store('attendance-selfies', 'public');
     }
 
     private function summary($records): array

@@ -29,6 +29,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/kinerja', [PerformanceEntryController::class, 'store'])->name('entries.store');
         Route::get('/laporan', [ReportController::class, 'show'])->name('reports.show');
         Route::get('/absensi', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('/absensi/riwayat/{attendanceRecord}', [AttendanceController::class, 'show'])->name('attendance.show');
+        Route::get('/absensi/riwayat/{attendanceRecord}/edit', [AttendanceController::class, 'edit'])->name('attendance.edit');
+        Route::put('/absensi/riwayat/{attendanceRecord}', [AttendanceController::class, 'update'])->name('attendance.update');
         Route::get('/absensi/{type}', [AttendanceController::class, 'create'])->name('attendance.create');
         Route::post('/absensi/{type}', [AttendanceController::class, 'store'])->name('attendance.store');
         Route::get('/cuti', [LeaveRequestController::class, 'index'])->name('leave.index');
@@ -40,6 +43,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/absensi', [AdminAttendanceController::class, 'index'])->name('admin.attendance.index');
+        Route::get('/admin/absensi/{attendanceRecord}/edit', [AdminAttendanceController::class, 'edit'])->name('admin.attendance.edit');
+        Route::put('/admin/absensi/{attendanceRecord}', [AdminAttendanceController::class, 'update'])->name('admin.attendance.update');
         Route::get('/admin/absensi/{attendanceRecord}', [AdminAttendanceController::class, 'show'])->name('admin.attendance.show');
         Route::get('/admin/cuti', [AdminLeaveRequestController::class, 'index'])->name('admin.leave.index');
         Route::get('/admin/cuti/kalender', [AdminLeaveRequestController::class, 'calendar'])->name('admin.leave.calendar');
