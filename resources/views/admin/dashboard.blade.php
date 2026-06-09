@@ -107,6 +107,7 @@
         </div>
       </div>
       <div class="quick-grid">
+        <a class="quick-card green" href="{{ route('admin.attendance.index') }}"><strong>Dashboard Absensi</strong><span>Pantau hadir, dinas luar, izin, dan alfa</span></a>
         <a class="quick-card green" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Download PDF</strong><span>Semua laporan sesuai filter</span></a>
         <a class="quick-card gold" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Export Excel</strong><span>Data kinerja bulanan</span></a>
         <a class="quick-card blue" href="{{ route('admin.users.index') }}"><strong>Kelola User</strong><span>Tambah dan edit PJLP</span></a>

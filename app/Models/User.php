@@ -59,6 +59,11 @@ class User extends Authenticatable
         return $this->hasMany(LeaveRequest::class);
     }
 
+    public function attendanceRecords()
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
+
     public function usesSecurityShift(): bool
     {
         return $this->jabatan === 'Keamanan'

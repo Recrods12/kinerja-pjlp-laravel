@@ -30,6 +30,9 @@
                 ['label' => 'Pengajuan Cuti', 'route' => route('admin.leave.index'), 'active' => request()->routeIs('admin.leave.index') || request()->routeIs('admin.leave.show') || request()->routeIs('admin.leave.print')],
                 ['label' => 'Kalender Cuti', 'route' => route('admin.leave.calendar'), 'active' => request()->routeIs('admin.leave.calendar')],
               ],
+              'Absensi' => [
+                ['label' => 'Dashboard Absensi', 'route' => route('admin.attendance.index'), 'active' => request()->routeIs('admin.attendance.*')],
+              ],
               'Master Data' => [
                 ['label' => 'Kelola User', 'route' => route('admin.users.index'), 'active' => request()->routeIs('admin.users.*')],
                 ['label' => 'Kelola Libur', 'route' => route('admin.holidays.index'), 'active' => request()->routeIs('admin.holidays.*')],
@@ -51,6 +54,9 @@
                 ['label' => 'Ajukan Cuti', 'route' => route('leave.create'), 'active' => request()->routeIs('leave.create')],
                 ['label' => 'Riwayat Cuti', 'route' => route('leave.index'), 'active' => request()->routeIs('leave.index') || request()->routeIs('leave.show')],
                 ['label' => 'Kalender Cuti', 'route' => route('leave.calendar'), 'active' => request()->routeIs('leave.calendar')],
+              ],
+              'Absensi' => [
+                ['label' => 'Absen Mobile', 'route' => route('attendance.index'), 'active' => request()->routeIs('attendance.*')],
               ],
             ];
       @endphp

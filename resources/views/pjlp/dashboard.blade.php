@@ -163,6 +163,7 @@
         </div>
       </div>
       <div class="quick-grid">
+        <a class="quick-card green" href="{{ route('attendance.index') }}"><strong>Absen Mobile</strong><span>Absen awal, akhir, atau dinas luar</span></a>
         <a class="quick-card green" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}"><strong>Lihat Laporan</strong><span>Preview kinerja tanggal ini</span></a>
         <a class="quick-card gold" href="{{ route('leave.create') }}"><strong>Ajukan Cuti</strong><span>Buat pengajuan cuti baru</span></a>
         <a class="quick-card blue" href="{{ route('leave.index') }}"><strong>Riwayat Cuti</strong><span>{{ $leaveSummary['approved'] ?? 0 }} disetujui, {{ $leaveSummary['rejected'] ?? 0 }} ditolak</span></a>

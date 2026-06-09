@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminAttendanceController;
 use App\Http\Controllers\AdminExportController;
 use App\Http\Controllers\AdminHolidayController;
 use App\Http\Controllers\AdminLeaveRequestController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\PerformanceEntryController;
@@ -26,6 +28,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:pjlp')->group(function () {
         Route::post('/kinerja', [PerformanceEntryController::class, 'store'])->name('entries.store');
         Route::get('/laporan', [ReportController::class, 'show'])->name('reports.show');
+        Route::get('/absensi', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('/absensi/{type}', [AttendanceController::class, 'create'])->name('attendance.create');
+        Route::post('/absensi/{type}', [AttendanceController::class, 'store'])->name('attendance.store');
         Route::get('/cuti', [LeaveRequestController::class, 'index'])->name('leave.index');
         Route::get('/cuti/kalender', [LeaveRequestController::class, 'calendar'])->name('leave.calendar');
         Route::get('/cuti/ajukan', [LeaveRequestController::class, 'create'])->name('leave.create');
@@ -34,6 +39,8 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/absensi', [AdminAttendanceController::class, 'index'])->name('admin.attendance.index');
+        Route::get('/admin/absensi/{attendanceRecord}', [AdminAttendanceController::class, 'show'])->name('admin.attendance.show');
         Route::get('/admin/cuti', [AdminLeaveRequestController::class, 'index'])->name('admin.leave.index');
         Route::get('/admin/cuti/kalender', [AdminLeaveRequestController::class, 'calendar'])->name('admin.leave.calendar');
         Route::get('/admin/cuti/export-excel', [AdminLeaveRequestController::class, 'exportExcel'])->name('admin.leave.exportExcel');
