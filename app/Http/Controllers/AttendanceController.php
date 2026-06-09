@@ -69,6 +69,8 @@ class AttendanceController extends Controller
             'longitude.required' => 'Lokasi GPS wajib aktif sebelum absensi.',
             'note.required' => 'Tujuan atau keterangan dinas luar wajib diisi.',
             'selfie.required' => 'Foto selfie wajib diunggah untuk absensi.',
+            'selfie.uploaded' => 'Foto selfie gagal diunggah. Coba ambil foto ulang, pastikan koneksi stabil, atau kecilkan ukuran foto.',
+            'selfie.file' => 'Foto selfie tidak valid.',
             'selfie.mimes' => 'File selfie harus berupa gambar JPG, PNG, WEBP, HEIC, atau HEIF.',
             'selfie.max' => 'Ukuran foto selfie maksimal 12 MB.',
         ]);
@@ -118,6 +120,8 @@ class AttendanceController extends Controller
             'selfie' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:12288'],
         ], [
             'note.required' => 'Tujuan atau keterangan dinas luar wajib diisi.',
+            'selfie.uploaded' => 'Foto selfie gagal diunggah. Coba ambil foto ulang, pastikan koneksi stabil, atau kecilkan ukuran foto.',
+            'selfie.file' => 'Foto selfie tidak valid.',
             'selfie.mimes' => 'File selfie harus berupa gambar JPG, PNG, WEBP, HEIC, atau HEIF.',
             'selfie.max' => 'Ukuran foto selfie maksimal 12 MB.',
         ]);

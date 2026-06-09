@@ -38,7 +38,7 @@
         const canvas = document.createElement('canvas');
         const sourceWidth = image.naturalWidth || image.width;
         const sourceHeight = image.naturalHeight || image.height;
-        const scale = Math.min(1, 1400 / Math.max(sourceWidth, sourceHeight));
+        const scale = Math.min(1, 1100 / Math.max(sourceWidth, sourceHeight));
 
         canvas.width = Math.max(1, Math.round(sourceWidth * scale));
         canvas.height = Math.max(1, Math.round(sourceHeight * scale));
@@ -47,7 +47,7 @@
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
         drawTimestamp(ctx, canvas);
 
-        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.78));
         if (!blob || typeof DataTransfer === 'undefined') {
           throw new Error('Browser tidak mendukung penggantian file otomatis.');
         }

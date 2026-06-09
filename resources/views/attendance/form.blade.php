@@ -39,7 +39,7 @@
         <small>{{ $dateLabel }}</small>
       </div>
 
-      <form class="form-stack" method="post" action="{{ route('attendance.store', $type) }}" enctype="multipart/form-data">
+      <form class="form-stack" method="post" action="{{ route('attendance.store', $type) }}" enctype="multipart/form-data" data-attendance-form data-attendance-label="{{ $typeLabel }}">
         @csrf
         <input type="hidden" name="latitude" data-latitude>
         <input type="hidden" name="longitude" data-longitude>
@@ -125,19 +125,8 @@
       locationStatus.textContent = 'Browser tidak mendukung GPS. Isi alamat manual.';
     }
 
-    const selfieInput = document.querySelector('[data-selfie-input]');
-    const selfiePreview = document.querySelector('[data-selfie-preview]');
-    const cameraTrigger = document.querySelector('[data-camera-trigger]');
-    const selfieName = document.querySelector('[data-selfie-name]');
-
-    cameraTrigger?.addEventListener('click', () => selfieInput?.click());
-
-    selfieInput?.addEventListener('change', () => {
-      const file = selfieInput.files?.[0];
-      if (!file) return;
-      selfiePreview.src = URL.createObjectURL(file);
-      selfiePreview.hidden = false;
-      selfieName.textContent = file.name || 'Foto selfie sudah dipilih.';
-    });
+    window.refreshAttendanceSelfieTimestamp?.();
   </script>
+
+  @include('attendance.partials.selfie-timestamp')
 @endsection
