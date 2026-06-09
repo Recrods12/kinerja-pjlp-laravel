@@ -6,13 +6,23 @@
 @endphp
 
 @section('content')
-  <section class="panel narrow">
-    <div class="panel-header">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Master Data</p>
+      <h1>{{ $isEdit ? 'Edit User' : 'Tambah User' }}</h1>
+      <p class="muted">{{ $isEdit ? 'Perbarui akun, jabatan, NIP PJLP, NIK, kuota cuti, dan akses pengguna.' : 'Buat akun baru untuk admin atau PJLP dengan data kerja yang lengkap.' }}</p>
+    </div>
+    <div class="page-actions">
+      <a class="ghost-action" href="{{ route('admin.users.index') }}">Kembali</a>
+    </div>
+  </div>
+
+  <section class="panel narrow form-panel">
+    <div class="panel-header compact">
       <div>
-        <h2>{{ $isEdit ? 'Edit User' : 'Tambah User' }}</h2>
+        <h2>Data Akun</h2>
         <p class="muted">{{ $isEdit ? 'Kosongkan password jika tidak ingin mengganti password.' : 'Buat akun baru untuk admin atau PJLP.' }}</p>
       </div>
-      <a class="ghost-action" href="{{ route('admin.users.index') }}">Kembali</a>
     </div>
 
     <form class="profile-grid" method="post" action="{{ $action }}">

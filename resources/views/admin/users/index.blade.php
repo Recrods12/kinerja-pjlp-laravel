@@ -1,15 +1,23 @@
 @extends('layouts.app')
 
 @section('content')
-  <section class="panel">
-    <div class="panel-header">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Master Data</p>
+      <h1>Kelola User</h1>
+      <p class="muted">Atur akun admin dan PJLP, termasuk password, email, ID, profil, role, dan tanda tangan digital.</p>
+    </div>
+    <div class="page-actions">
+      <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
+      <a class="primary-action" href="{{ route('admin.users.create') }}">Tambah User</a>
+    </div>
+  </div>
+
+  <section class="panel management-panel">
+    <div class="panel-header compact">
       <div>
-        <h2>Kelola User</h2>
-        <p class="muted">Atur akun admin dan PJLP, termasuk password, email, ID, profil, dan role.</p>
-      </div>
-      <div class="actions-row">
-        <a class="ghost-action" href="{{ route('dashboard') }}">Kembali</a>
-        <a class="primary-action" href="{{ route('admin.users.create') }}">Tambah User</a>
+        <h2>Daftar Pengguna</h2>
+        <p class="muted">{{ $users->count() }} akun terdaftar pada sistem kinerja PJLP.</p>
       </div>
     </div>
 

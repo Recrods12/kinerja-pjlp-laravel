@@ -1,13 +1,23 @@
 @extends('layouts.app')
 
 @section('content')
-  <section class="panel narrow">
-    <div class="panel-header">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Pengajuan Cuti</p>
+      <h1>Ajukan Cuti</h1>
+      <p class="muted">Isi tanggal dan keperluan cuti. Pengajuan akan masuk ke panel admin untuk diproses.</p>
+    </div>
+    <div class="page-actions">
+      <a class="ghost-action" href="{{ route('leave.index') }}">Kembali</a>
+    </div>
+  </div>
+
+  <section class="panel narrow form-panel">
+    <div class="panel-header compact">
       <div>
-        <h2>Ajukan Cuti</h2>
+        <h2>Form Pengajuan</h2>
         <p class="muted">Sisa cuti Anda saat ini {{ $user->annual_leave_remaining }} hari kerja.</p>
       </div>
-      <a class="ghost-action" href="{{ route('leave.index') }}">Kembali</a>
     </div>
 
     <form class="form-stack" method="post" action="{{ route('leave.store') }}">

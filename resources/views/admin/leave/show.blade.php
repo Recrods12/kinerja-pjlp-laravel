@@ -1,10 +1,24 @@
 @extends('layouts.app')
 
 @section('content')
-  <section class="panel narrow">
-    <div class="panel-header">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Administrasi Cuti</p>
+      <h1>Approval Cuti</h1>
+      <p class="muted">Periksa detail pengajuan, ubah tanggal jika diperlukan, lalu proses keputusan admin.</p>
+    </div>
+    <div class="page-actions">
+      <a class="ghost-action" href="{{ route('admin.leave.index') }}">Kembali</a>
+      @if ($leaveRequest->status === \App\Models\LeaveRequest::STATUS_APPROVED)
+        <a class="primary-action" href="{{ route('admin.leave.print', $leaveRequest) }}" target="_blank">Cetak Form</a>
+      @endif
+    </div>
+  </div>
+
+  <section class="panel narrow detail-panel">
+    <div class="panel-header compact">
       <div>
-        <h2>Approval Cuti</h2>
+        <h2>{{ $leaveRequest->user->name }}</h2>
         <p class="muted">{{ $leaveRequest->user->name }} &middot; Sisa cuti {{ $leaveRequest->user->annual_leave_remaining }} hari kerja.</p>
       </div>
       @include('partials.leave-status', ['status' => $leaveRequest->status])
@@ -72,9 +86,6 @@
     @endif
 
     <div class="actions-row">
-      @if ($leaveRequest->status === \App\Models\LeaveRequest::STATUS_APPROVED)
-        <a class="primary-action" href="{{ route('admin.leave.print', $leaveRequest) }}" target="_blank">Cetak Form</a>
-      @endif
       <a class="ghost-action" href="{{ route('admin.leave.index') }}">Kembali</a>
     </div>
   </section>

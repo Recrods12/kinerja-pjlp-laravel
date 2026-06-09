@@ -1,10 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
-  <section class="panel narrow">
-    <div class="panel-header">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Riwayat Cuti</p>
+      <h1>Detail Cuti</h1>
+      <p class="muted">Lihat status, durasi, dan catatan admin untuk pengajuan ini.</p>
+    </div>
+    <div class="page-actions">
+      <a class="ghost-action" href="{{ route('leave.index') }}">Kembali</a>
+    </div>
+  </div>
+
+  <section class="panel narrow detail-panel">
+    <div class="panel-header compact">
       <div>
-        <h2>Detail Cuti</h2>
+        <h2>{{ $leaveRequest->start_date->translatedFormat('d F Y') }}</h2>
         <p class="muted">Pengajuan dibuat pada {{ $leaveRequest->created_at->translatedFormat('d F Y H:i') }}.</p>
       </div>
       @include('partials.leave-status', ['status' => $leaveRequest->status])

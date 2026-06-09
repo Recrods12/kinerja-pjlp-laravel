@@ -1,10 +1,23 @@
 @extends('layouts.app')
 
 @section('content')
-  <section class="panel narrow">
-    <div class="panel-header">
-      <h2>Profil {{ strtoupper($user->role) }}</h2>
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Pengaturan Akun</p>
+      <h1>Profil {{ strtoupper($user->role) }}</h1>
+      <p class="muted">Perbarui data pribadi, kontak, tanda tangan digital, dan password akun.</p>
+    </div>
+    <div class="page-actions">
       <a class="ghost-action" href="{{ route('dashboard') }}">Kembali</a>
+    </div>
+  </div>
+
+  <section class="panel narrow form-panel">
+    <div class="panel-header compact">
+      <div>
+        <h2>Data Profil</h2>
+        <p class="muted">{{ $user->name }} &middot; {{ strtoupper($user->role) }}</p>
+      </div>
     </div>
     <form class="profile-grid" method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data">
       @csrf
