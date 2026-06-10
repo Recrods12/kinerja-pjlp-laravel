@@ -20,7 +20,11 @@
     'alfa' => 'Belum ada absensi',
     'belum_lengkap' => 'Baru absen awal',
   ];
-  $selectedRow = $rows->first(fn ($row) => $row['latestRecord']) ?? $rows->first();
+  $selectedUserId = (int) request('user_id');
+  $selectedRow = $selectedUserId
+    ? $rows->first(fn ($row) => (int) $row['user']->id === $selectedUserId)
+    : null;
+  $selectedRow = $selectedRow ?? $rows->first(fn ($row) => $row['latestRecord']) ?? $rows->first();
   $selectedUser = $selectedRow['user'] ?? null;
   $selectedRecords = $selectedRow['records'] ?? collect();
   $selectedLatest = $selectedRow['latestRecord'] ?? null;
@@ -104,9 +108,22 @@
                 $field = $records->get(AttendanceRecord::TYPE_FIELD);
                 $latest = $row['latestRecord'];
               @endphp
+              @php
+                $detailUrl = route('admin.attendance.index', array_filter([
+                  'date' => $date->toDateString(),
+                  'status' => $status,
+                  'search' => $search,
+                  'user_id' => $user->id,
+                ], fn ($value) => filled($value)));
+              @endphp
               <tr class="{{ $selectedUser && $selectedUser->id === $user->id ? 'is-selected' : '' }}">
                 <td>{{ $loop->iteration }}</td>
-                <td><strong>{{ $user->name }}</strong><br><span class="muted">{{ $user->nip ?: '-' }}</span></td>
+                <td>
+                  <a class="attendance-user-link" href="{{ $detailUrl }}" title="Lihat detail absensi {{ $user->name }}">
+                    <strong>{{ $user->name }}</strong>
+                    <span>{{ $user->nip ?: '-' }}</span>
+                  </a>
+                </td>
                 <td>{{ $user->jabatan ?: 'PJLP' }}</td>
                 <td class="attendance-time-cell">
                   @if ($start)

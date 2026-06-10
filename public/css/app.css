@@ -1107,6 +1107,23 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   box-shadow: inset 3px 0 0 var(--green);
 }
 
+.attendance-user-link {
+  display: inline-grid;
+  gap: 3px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.attendance-user-link span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.attendance-user-link:hover strong {
+  color: var(--green);
+  text-decoration: underline;
+}
+
 .attendance-time-cell {
   white-space: nowrap;
   font-weight: 850;
