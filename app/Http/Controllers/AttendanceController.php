@@ -12,8 +12,12 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
+        if ($request->has('date')) {
+            return redirect()->route('attendance.index');
+        }
+
         $user = $request->user();
-        $date = Carbon::parse($request->query('date', now()->toDateString()))->startOfDay();
+        $date = now()->startOfDay();
         $records = $this->recordsForDate($user, $date);
 
         return view('attendance.index', [

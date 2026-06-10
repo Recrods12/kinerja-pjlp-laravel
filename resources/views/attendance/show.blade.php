@@ -15,7 +15,7 @@
       <p class="muted">{{ $dateLabel }} - {{ $attendanceRecord->recorded_at->format('H:i:s') }} WIB</p>
     </div>
     <div class="page-actions">
-      <a class="ghost-action" href="{{ route('attendance.index', ['date' => $date->toDateString()]) }}">Kembali</a>
+      <a class="ghost-action" href="{{ route('attendance.index') }}">Kembali</a>
     </div>
   </section>
 
