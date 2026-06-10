@@ -1085,7 +1085,7 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 
 .attendance-toolbar {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) auto auto;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr) auto;
   gap: 12px;
   align-items: end;
   margin: 16px 0;
@@ -1093,6 +1093,17 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255,255,255,.54);
+}
+
+.attendance-toolbar .filter-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.attendance-toolbar .filter-chip {
+  flex: 0 0 auto;
 }
 
 .attendance-table {
