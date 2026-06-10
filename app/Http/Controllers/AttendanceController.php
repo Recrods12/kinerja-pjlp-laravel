@@ -93,8 +93,15 @@ class AttendanceController extends Controller
     {
         $this->ensureOwnedByUser($request, $attendanceRecord);
 
+        $records = AttendanceRecord::query()
+            ->where('user_id', $attendanceRecord->user_id)
+            ->whereDate('work_date', $attendanceRecord->work_date)
+            ->orderBy('recorded_at')
+            ->get();
+
         return view('attendance.show', [
             'attendanceRecord' => $attendanceRecord->load('user'),
+            'records' => $records,
         ]);
     }
 

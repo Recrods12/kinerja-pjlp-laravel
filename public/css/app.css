@@ -478,6 +478,13 @@ textarea { min-height: 96px; resize: vertical; }
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, .58);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+a.mini-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(20, 122, 85, .32);
+  box-shadow: 0 12px 28px rgba(20, 36, 31, .10);
 }
 
 .mini-item strong,
@@ -1369,7 +1376,8 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   display: grid;
   gap: 12px;
 }
-.attendance-status-list div {
+.attendance-status-list div,
+.attendance-status-list a {
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr) auto;
   gap: 10px;
@@ -1378,6 +1386,12 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255,255,255,.58);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.attendance-status-list a:hover {
+  transform: translateY(-1px);
+  border-color: rgba(20, 122, 85, .34);
+  box-shadow: 0 12px 28px rgba(20, 36, 31, .10);
 }
 .status-dot {
   width: 12px;

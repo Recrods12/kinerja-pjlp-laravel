@@ -31,7 +31,7 @@
   </section>
 
   <section class="attendance-grid">
-    <a class="attendance-action-card green" href="{{ route('attendance.create', AttendanceRecord::TYPE_START) }}">
+    <a class="attendance-action-card green" href="{{ $summary['start'] ? route('attendance.show', $summary['start']) : route('attendance.create', AttendanceRecord::TYPE_START) }}">
       <i>IN</i>
       <span>
         <strong>Absen Awal</strong>
@@ -39,7 +39,7 @@
       </span>
       <em>{{ $formatTime($summary['start']) }}</em>
     </a>
-    <a class="attendance-action-card red" href="{{ route('attendance.create', AttendanceRecord::TYPE_END) }}">
+    <a class="attendance-action-card red" href="{{ $summary['end'] ? route('attendance.show', $summary['end']) : route('attendance.create', AttendanceRecord::TYPE_END) }}">
       <i>OUT</i>
       <span>
         <strong>Absen Akhir</strong>
@@ -47,7 +47,7 @@
       </span>
       <em>{{ $formatTime($summary['end']) }}</em>
     </a>
-    <a class="attendance-action-card blue" href="{{ route('attendance.create', AttendanceRecord::TYPE_FIELD) }}">
+    <a class="attendance-action-card blue" href="{{ $summary['field'] ? route('attendance.show', $summary['field']) : route('attendance.create', AttendanceRecord::TYPE_FIELD) }}">
       <i>DL</i>
       <span>
         <strong>Dinas Luar</strong>
@@ -66,9 +66,23 @@
         </div>
       </div>
       <div class="attendance-status-list">
-        <div><span class="status-dot done"></span><strong>Absen Awal</strong><em>{{ $formatTime($summary['start']) }}</em></div>
-        <div><span class="status-dot {{ $summary['end'] ? 'done' : 'neutral' }}"></span><strong>Absen Akhir</strong><em>{{ $formatTime($summary['end']) }}</em></div>
-        <div><span class="status-dot {{ $summary['field'] ? 'field' : 'neutral' }}"></span><strong>Dinas Luar</strong><em>{{ $summary['field'] ? $formatTime($summary['field']) : 'Tidak Aktif' }}</em></div>
+        @if ($summary['start'])
+          <a class="attendance-status-row" href="{{ route('attendance.show', $summary['start']) }}"><span class="status-dot done"></span><strong>Absen Awal</strong><em>{{ $formatTime($summary['start']) }}</em></a>
+        @else
+          <div><span class="status-dot neutral"></span><strong>Absen Awal</strong><em>Belum Absen</em></div>
+        @endif
+
+        @if ($summary['end'])
+          <a class="attendance-status-row" href="{{ route('attendance.show', $summary['end']) }}"><span class="status-dot done"></span><strong>Absen Akhir</strong><em>{{ $formatTime($summary['end']) }}</em></a>
+        @else
+          <div><span class="status-dot neutral"></span><strong>Absen Akhir</strong><em>Belum Absen</em></div>
+        @endif
+
+        @if ($summary['field'])
+          <a class="attendance-status-row" href="{{ route('attendance.show', $summary['field']) }}"><span class="status-dot field"></span><strong>Dinas Luar</strong><em>{{ $formatTime($summary['field']) }}</em></a>
+        @else
+          <div><span class="status-dot neutral"></span><strong>Dinas Luar</strong><em>Tidak Aktif</em></div>
+        @endif
       </div>
     </article>
 
@@ -81,14 +95,14 @@
       </div>
       <div class="mini-list">
         @forelse ($recentRecords as $record)
-          <div class="mini-item">
+          <a class="mini-item" href="{{ route('attendance.show', $record) }}">
             <span class="avatar small">{{ \Illuminate\Support\Str::substr($record->label(), 0, 1) }}</span>
             <span>
               <strong>{{ $record->label() }}</strong>
               <small>{{ $record->work_date->format('d') }} {{ $monthNames[$record->work_date->month] }} {{ $record->work_date->year }} - {{ $record->recorded_at->format('H:i') }} WIB</small>
             </span>
             <em class="status-pill done">Tersimpan</em>
-          </div>
+          </a>
         @empty
           <p class="muted">Belum ada riwayat absensi.</p>
         @endforelse
