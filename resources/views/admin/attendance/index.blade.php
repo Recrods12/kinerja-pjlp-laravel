@@ -70,14 +70,15 @@
 
       <form id="attendance-filter" class="attendance-toolbar" method="get" action="{{ route('admin.attendance.index') }}">
         <input type="hidden" name="date" value="{{ $date->toDateString() }}">
+        <input type="hidden" name="status" value="{{ $status }}" data-attendance-status-input>
         <label class="filter-search">
           <span>Cari Data</span>
-          <input name="search" value="{{ $search }}" placeholder="Nama, username, NIP, NIK, jabatan">
+          <input name="search" value="{{ $search }}" placeholder="Nama, username, NIP, NIK, jabatan" autocomplete="off" data-attendance-live-search>
         </label>
         <div class="filter-tabs">
-          <a class="filter-chip {{ $status ? '' : 'active' }}" href="{{ route('admin.attendance.index', array_filter(['date' => $date->toDateString(), 'search' => $search], fn ($value) => filled($value))) }}">Semua</a>
+          <button class="filter-chip {{ $status ? '' : 'active' }}" type="button" data-attendance-status="">Semua</button>
           @foreach ($statusLabels as $key => $label)
-            <a class="filter-chip {{ $status === $key ? 'active' : '' }}" href="{{ route('admin.attendance.index', array_filter(['date' => $date->toDateString(), 'status' => $key, 'search' => $search], fn ($value) => filled($value))) }}">{{ $label }}</a>
+            <button class="filter-chip {{ $status === $key ? 'active' : '' }}" type="button" data-attendance-status="{{ $key }}">{{ $label }}</button>
           @endforeach
         </div>
         <button class="primary-action" type="submit">Filter</button>
@@ -226,4 +227,54 @@
     <i>OK</i>
     <span>Sistem absensi dilengkapi verifikasi lokasi, waktu, dan foto selfie untuk memastikan akurasi kehadiran.</span>
   </section>
+
+  <script>
+    (() => {
+      const form = document.querySelector('#attendance-filter');
+      const searchInput = form?.querySelector('[data-attendance-live-search]');
+      const statusInput = form?.querySelector('[data-attendance-status-input]');
+      const statusButtons = form?.querySelectorAll('[data-attendance-status]') ?? [];
+      let searchTimer;
+      let isComposing = false;
+
+      const submitFilter = () => {
+        if (!form) return;
+
+        if (form.requestSubmit) {
+          form.requestSubmit();
+          return;
+        }
+
+        form.submit();
+      };
+
+      const submitSearch = () => {
+        if (isComposing) return;
+
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(submitFilter, 650);
+      };
+
+      statusButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          if (statusInput) {
+            statusInput.value = button.dataset.attendanceStatus || '';
+          }
+
+          submitFilter();
+        });
+      });
+
+      searchInput?.addEventListener('compositionstart', () => {
+        isComposing = true;
+      });
+
+      searchInput?.addEventListener('compositionend', () => {
+        isComposing = false;
+        submitSearch();
+      });
+
+      searchInput?.addEventListener('input', submitSearch);
+    })();
+  </script>
 @endsection
