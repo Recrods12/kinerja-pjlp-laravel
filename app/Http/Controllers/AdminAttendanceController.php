@@ -19,55 +19,8 @@ class AdminAttendanceController extends Controller
         $status = $request->query('status');
         $search = trim((string) $request->query('search', ''));
 
-        $users = User::query()
-            ->where('role', 'pjlp')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query
-                        ->where('name', 'like', "%{$search}%")
-                        ->orWhere('username', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('nip', 'like', "%{$search}%")
-                        ->orWhere('nik', 'like', "%{$search}%")
-                        ->orWhere('jabatan', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name')
-            ->get();
-
-        $records = AttendanceRecord::query()
-            ->with('user')
-            ->whereDate('work_date', $date)
-            ->get()
-            ->groupBy('user_id');
-
-        $leaves = LeaveRequest::query()
-            ->where('status', LeaveRequest::STATUS_APPROVED)
-            ->whereDate('start_date', '<=', $date)
-            ->whereDate('end_date', '>=', $date)
-            ->get()
-            ->keyBy('user_id');
-
-        $summaryRows = $users->map(function (User $user) use ($records, $leaves) {
-            $userRecords = $records->get($user->id, collect())->keyBy('type');
-            $leave = $leaves->get($user->id);
-            $rowStatus = $this->statusFor($userRecords, $leave);
-            $latestRecord = $userRecords->sortByDesc('recorded_at')->first();
-
-            return [
-                'user' => $user,
-                'records' => $userRecords,
-                'leave' => $leave,
-                'status' => $rowStatus,
-                'latestRecord' => $latestRecord,
-            ];
-        });
-
-        $rows = $summaryRows;
-
-        if (in_array($status, ['hadir', 'dinas_luar', 'izin', 'alfa', 'belum_lengkap'], true)) {
-            $rows = $rows->filter(fn ($row) => $row['status'] === $status)->values();
-        }
+        $summaryRows = $this->attendanceRows($date, $search);
+        $rows = $this->filterRowsByStatus($summaryRows, $status);
 
         return view('admin.attendance.index', [
             'date' => $date,
@@ -82,6 +35,65 @@ class AdminAttendanceController extends Controller
                 'belum_lengkap' => $summaryRows->where('status', 'belum_lengkap')->count(),
             ],
         ]);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $date = Carbon::parse($request->query('date', now()->toDateString()))->startOfDay();
+        $status = $request->query('status');
+        $search = trim((string) $request->query('search', ''));
+        $rows = $this->filterRowsByStatus($this->attendanceRows($date, $search), $status);
+        $statusLabels = $this->statusLabels();
+        $fileName = 'rekap-absensi-pjlp-' . $date->format('Y-m-d') . '.xls';
+
+        return response()->streamDownload(function () use ($rows, $date, $statusLabels) {
+            echo '<!doctype html><html><head><meta charset="utf-8">';
+            echo '<style>
+                table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; }
+                th { background: #dff6e8; font-weight: bold; text-align: center; }
+                th, td { border: 1px solid #333; padding: 6px; vertical-align: top; }
+                .center { text-align: center; }
+                .wrap { mso-number-format:"\@"; white-space: normal; }
+                .title { font-size: 16px; font-weight: bold; border: 0; padding: 8px 0; }
+            </style>';
+            echo '</head><body>';
+            echo '<table>';
+            echo '<tr><td class="title" colspan="12">Rekap Absensi PJLP ' . e($this->dateLabel($date)) . '</td></tr>';
+            echo '<tr>';
+
+            foreach (['No', 'Nama Pegawai', 'NIP PJLP', 'NIK', 'Jabatan / Bidang', 'Tanggal', 'Absen Awal', 'Absen Akhir', 'Dinas Luar', 'Status', 'Lokasi Terakhir', 'Catatan / Tujuan'] as $heading) {
+                echo '<th>' . e($heading) . '</th>';
+            }
+
+            echo '</tr>';
+
+            foreach ($rows as $index => $row) {
+                $user = $row['user'];
+                $records = $row['records'];
+                $start = $records->get(AttendanceRecord::TYPE_START);
+                $end = $records->get(AttendanceRecord::TYPE_END);
+                $field = $records->get(AttendanceRecord::TYPE_FIELD);
+                $latest = $row['latestRecord'];
+                $leave = $row['leave'];
+
+                echo '<tr>';
+                echo '<td class="center">' . e($index + 1) . '</td>';
+                echo '<td>' . e($user->name) . '</td>';
+                echo '<td class="center">' . e($user->nip ?: '-') . '</td>';
+                echo '<td class="center">' . e($user->nik ?: '-') . '</td>';
+                echo '<td>' . e($user->jabatan ?: 'PJLP') . '</td>';
+                echo '<td class="center">' . e($this->dateLabel($date)) . '</td>';
+                echo '<td class="center">' . e($this->timeCell($start)) . '</td>';
+                echo '<td class="center">' . e($this->timeCell($end)) . '</td>';
+                echo '<td class="center">' . e($this->timeCell($field)) . '</td>';
+                echo '<td class="center">' . e($statusLabels[$row['status']] ?? $row['status']) . '</td>';
+                echo '<td class="wrap">' . e($this->locationText($latest)) . '</td>';
+                echo '<td class="wrap">' . e($field?->note ?: ($latest?->note ?: ($leave?->reason ?: '-'))) . '</td>';
+                echo '</tr>';
+            }
+
+            echo '</table></body></html>';
+        }, $fileName, ['Content-Type' => 'application/vnd.ms-excel; charset=UTF-8']);
     }
 
     public function show(AttendanceRecord $attendanceRecord)
@@ -165,6 +177,103 @@ class AdminAttendanceController extends Controller
         }
 
         return $request->file('selfie')->store('attendance-selfies', 'public');
+    }
+
+    private function attendanceRows(Carbon $date, string $search)
+    {
+        $users = User::query()
+            ->where('role', 'pjlp')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('nip', 'like', "%{$search}%")
+                        ->orWhere('nik', 'like', "%{$search}%")
+                        ->orWhere('jabatan', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name')
+            ->get();
+
+        $records = AttendanceRecord::query()
+            ->with('user')
+            ->whereDate('work_date', $date)
+            ->get()
+            ->groupBy('user_id');
+
+        $leaves = LeaveRequest::query()
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->get()
+            ->keyBy('user_id');
+
+        return $users->map(function (User $user) use ($records, $leaves) {
+            $userRecords = $records->get($user->id, collect())->keyBy('type');
+            $leave = $leaves->get($user->id);
+            $rowStatus = $this->statusFor($userRecords, $leave);
+            $latestRecord = $userRecords->sortByDesc('recorded_at')->first();
+
+            return [
+                'user' => $user,
+                'records' => $userRecords,
+                'leave' => $leave,
+                'status' => $rowStatus,
+                'latestRecord' => $latestRecord,
+            ];
+        });
+    }
+
+    private function filterRowsByStatus($rows, ?string $status)
+    {
+        if (in_array($status, array_keys($this->statusLabels()), true)) {
+            return $rows->filter(fn ($row) => $row['status'] === $status)->values();
+        }
+
+        return $rows;
+    }
+
+    private function statusLabels(): array
+    {
+        return [
+            'hadir' => 'Hadir',
+            'dinas_luar' => 'Dinas Luar',
+            'izin' => 'Izin / Sakit',
+            'alfa' => 'Alfa',
+            'belum_lengkap' => 'Belum Lengkap',
+        ];
+    }
+
+    private function dateLabel(Carbon $date): string
+    {
+        $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+        $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+        return $dayNames[$date->dayOfWeek] . ', ' . $date->format('d') . ' ' . $monthNames[$date->month] . ' ' . $date->year;
+    }
+
+    private function timeCell(?AttendanceRecord $record): string
+    {
+        return $record ? $record->recorded_at->format('H:i') . ' WIB' : '-';
+    }
+
+    private function locationText(?AttendanceRecord $record): string
+    {
+        if (! $record) {
+            return '-';
+        }
+
+        if ($record->address) {
+            return $record->address;
+        }
+
+        if ($record->latitude && $record->longitude) {
+            return 'Lat ' . $record->latitude . ', Lng ' . $record->longitude;
+        }
+
+        return 'Koordinat tersimpan';
     }
 
     private function statusFor($records, ?LeaveRequest $leave): string

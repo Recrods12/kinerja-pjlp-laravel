@@ -40,7 +40,7 @@
       <p class="muted">Pantau kehadiran pegawai secara real-time pada {{ $dateLabel }}.</p>
     </div>
     <div class="page-actions">
-      <a class="ghost-action attendance-export-action" href="{{ route('admin.export.csv') }}">Export Excel</a>
+      <a class="ghost-action attendance-export-action" href="{{ route('admin.attendance.exportExcel', array_filter(['date' => $date->toDateString(), 'status' => $status, 'search' => $search], fn ($value) => filled($value))) }}">Export Excel</a>
       <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
       <form class="inline-date-form" method="get" action="{{ route('admin.attendance.index') }}">
         <input type="hidden" name="search" value="{{ $search }}">
