@@ -21,6 +21,11 @@
 
   <section class="dashboard-board">
     @foreach ($records as $record)
+      @php
+        $savedAddress = trim((string) $record->address);
+        $coordinateAddress = str_starts_with($savedAddress, 'Lat ');
+        $canResolveAddress = $record->latitude && $record->longitude && (! $savedAddress || $coordinateAddress);
+      @endphp
       <article class="panel attendance-detail-card">
         <div class="panel-header compact">
           <div>
@@ -38,7 +43,13 @@
           </div>
           <div>
             <dt>Lokasi</dt>
-            <dd>{{ $record->address ?: 'Koordinat tersimpan' }}</dd>
+            <dd
+              @if ($canResolveAddress)
+                data-reverse-geocode
+                data-lat="{{ $record->latitude }}"
+                data-lng="{{ $record->longitude }}"
+              @endif
+            >{{ $savedAddress && ! $coordinateAddress ? $savedAddress : ($canResolveAddress ? 'Mencari nama jalan...' : 'Koordinat tersimpan') }}</dd>
           </div>
           <div>
             <dt>Koordinat</dt>
@@ -69,4 +80,6 @@
       </article>
     @endforeach
   </section>
+
+  @include('attendance.partials.reverse-geocode')
 @endsection

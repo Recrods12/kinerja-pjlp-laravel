@@ -102,18 +102,61 @@
     const submitButton = document.querySelector('[data-attendance-submit]');
     const submitLabel = @json($typeLabel);
 
+    const coordinateFallback = (latitude, longitude) => `Lat ${latitude.toFixed(5)}, Lng ${longitude.toFixed(5)}`;
+
+    const pickStreetName = (payload) => {
+      const address = payload?.address || {};
+
+      return address.road
+        || address.pedestrian
+        || address.footway
+        || address.path
+        || address.neighbourhood
+        || address.suburb
+        || address.village
+        || address.city_district
+        || (payload?.display_name ? payload.display_name.split(',').slice(0, 2).join(',').trim() : '');
+    };
+
+    const resolveStreetName = async (latitude, longitude) => {
+      const url = new URL('https://nominatim.openstreetmap.org/reverse');
+      url.search = new URLSearchParams({
+        format: 'jsonv2',
+        lat: latitude,
+        lon: longitude,
+        zoom: '18',
+        addressdetails: '1',
+        'accept-language': 'id',
+      });
+
+      const response = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
+      if (!response.ok) {
+        return '';
+      }
+
+      return pickStreetName(await response.json());
+    };
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
         const { latitude, longitude, accuracy } = position.coords;
+        const fallback = coordinateFallback(latitude, longitude);
+
         latitudeInput.value = latitude.toFixed(7);
         longitudeInput.value = longitude.toFixed(7);
         accuracyInput.value = Math.round(accuracy);
-        locationText.value = locationText.value || `Lat ${latitude.toFixed(5)}, Lng ${longitude.toFixed(5)}`;
+        locationText.value = locationText.value || fallback;
         locationStatus.textContent = `GPS aktif, akurasi sekitar ${Math.round(accuracy)} meter`;
         mapLink.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
         mapLink.hidden = false;
         submitButton.disabled = false;
         submitButton.textContent = submitLabel;
+
+        resolveStreetName(latitude, longitude).then((streetName) => {
+          if (streetName && (!locationText.value || locationText.value === fallback)) {
+            locationText.value = streetName;
+          }
+        }).catch(() => {});
       }, () => {
         locationStatus.textContent = 'GPS belum aktif. Izinkan lokasi atau isi alamat manual.';
       }, {
