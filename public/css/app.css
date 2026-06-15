@@ -3025,7 +3025,8 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 }
 
 .rekap-chart-area .chart-donut-legend span {
-  font-size: 11px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .rekap-stats-col {
