@@ -140,112 +140,114 @@
         <canvas id="barChart"></canvas>
       </div>
     </article>
+  </section>
 
-    <article class="panel insight-panel">
+  <section class="dashboard-admin-split">
+    <section class="panel dashboard-table-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Dashboard Admin</h2>
+          <p class="muted">Pantau pengisian kinerja PJLP pada bulan {{ $monthLabel }}.</p>
+        </div>
+        <div class="admin-toolbar">
+          <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download ZIP PDF</a>
+          <a class="ghost-action" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Export Excel</a>
+          <a class="ghost-action" href="{{ route('admin.holidays.index') }}">Kelola Libur</a>
+          <div class="month-nav">
+            <a class="icon-action" href="{{ route('dashboard', array_merge($activeFilters, ['month' => $prevMonth->month, 'year' => $prevMonth->year])) }}">&lsaquo;</a>
+            <form class="month-jump-form admin-month-jump" method="get" action="{{ route('dashboard') }}">
+              @if ($selectedRole)
+                <input type="hidden" name="jabatan" value="{{ $selectedRole }}">
+              @endif
+              @if ($search)
+                <input type="hidden" name="search" value="{{ $search }}">
+              @endif
+              <select name="month" aria-label="Pilih bulan admin">
+                @for ($monthNumber = 1; $monthNumber <= 12; $monthNumber++)
+                  <option value="{{ $monthNumber }}" @selected($month->month === $monthNumber)>{{ $monthNames[$monthNumber] }}</option>
+                @endfor
+              </select>
+              <select name="year" aria-label="Pilih tahun admin">
+                @for ($year = now()->year - 3; $year <= now()->year + 2; $year++)
+                  <option value="{{ $year }}" @selected($month->year === $year)>{{ $year }}</option>
+                @endfor
+              </select>
+            </form>
+            <a class="icon-action" href="{{ route('dashboard', array_merge($activeFilters, ['month' => $nextMonth->month, 'year' => $nextMonth->year])) }}">&rsaquo;</a>
+          </div>
+        </div>
+      </div>
+
+      <form class="admin-filter-bar" method="get" action="{{ route('dashboard') }}" id="admin-filter-form">
+        <input type="hidden" name="month" value="{{ $month->month }}">
+        <input type="hidden" name="year" value="{{ $month->year }}">
+        <label class="filter-search">
+          <span>Cari Data</span>
+          <input name="search" value="{{ $search }}" placeholder="Nama, username, email, NIP PJLP, NIK" autocomplete="off" data-live-search>
+        </label>
+        <div class="filter-tabs">
+          <a class="filter-chip {{ $selectedRole ? '' : 'active' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'search' => $search], fn ($value) => filled($value))) }}">Semua</a>
+          @foreach ($jobRoles as $jobRole)
+            <a class="filter-chip {{ $selectedRole === $jobRole ? 'active' : '' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'jabatan' => $jobRole, 'search' => $search], fn ($value) => filled($value))) }}">{{ $jobRole }}</a>
+          @endforeach
+        </div>
+        <button class="primary-action" type="submit">Cari</button>
+        @if ($selectedRole || $search)
+          <a class="ghost-action" href="{{ route('dashboard', ['month' => $month->month, 'year' => $month->year]) }}">Reset</a>
+        @endif
+      </form>
+
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>PJLP</th>
+              <th>NIP PJLP</th>
+              <th>Sudah Diisi</th>
+              <th>Belum Diisi</th>
+              <th>Terakhir Isi</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            @forelse ($pjlpUsers as $person)
+              <tr data-user-row data-search-index="{{ Str::lower($person->name . ' ' . $person->username . ' ' . $person->email . ' ' . $person->nip . ' ' . $person->nik . ' ' . $person->jabatan . ' ' . $person->unit) }}">
+                <td><strong>{{ $person->name }}</strong><br><span class="muted">{{ $person->jabatan ?: 'PJLP' }}</span></td>
+                <td>{{ $person->nip ?: '-' }}</td>
+                <td><span class="status-pill done">{{ $person->stats['done'] }} terisi</span></td>
+                <td><span class="status-pill missing">{{ $person->stats['missing'] }} belum</span></td>
+                <td>{{ $person->latest_entry_date ? $formatDate($person->latest_entry_date) : '-' }}</td>
+                <td>
+                  @if ($person->latest_entry_date)
+                    <a class="ghost-action" href="{{ route('admin.reports.show', ['user' => $person, 'date' => \Carbon\Carbon::parse($person->latest_entry_date)->toDateString()]) }}">Laporan</a>
+                  @else
+                    -
+                  @endif
+                </td>
+              </tr>
+            @empty
+              <tr><td colspan="6">Tidak ada data PJLP yang cocok.</td></tr>
+            @endforelse
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside class="panel dashboard-quick-sidebar">
       <div class="panel-header compact">
         <div>
           <h2>Quick Action</h2>
           <p class="muted">Akses cepat pekerjaan admin.</p>
         </div>
       </div>
-      <div class="quick-grid">
+      <div class="quick-grid sidebar-quick-grid">
         <a class="quick-card green" href="{{ route('admin.attendance.index') }}"><strong>Dashboard Absensi</strong><span>Pantau hadir, dinas luar, izin, dan alfa</span></a>
         <a class="quick-card green" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Download PDF</strong><span>Semua laporan sesuai filter</span></a>
         <a class="quick-card gold" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Export Excel</strong><span>Data kinerja bulanan</span></a>
         <a class="quick-card blue" href="{{ route('admin.users.index') }}"><strong>Kelola User</strong><span>Tambah dan edit PJLP</span></a>
         <a class="quick-card red" href="{{ route('admin.holidays.index') }}"><strong>Kelola Libur</strong><span>Libur nasional dan manual</span></a>
       </div>
-    </article>
-  </section>
-
-  <section class="panel">
-    <div class="panel-header">
-      <div>
-        <h2>Dashboard Admin</h2>
-        <p class="muted">Pantau pengisian kinerja PJLP pada bulan {{ $monthLabel }}.</p>
-      </div>
-      <div class="admin-toolbar">
-        <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download ZIP PDF</a>
-        <a class="ghost-action" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Export Excel</a>
-        <a class="ghost-action" href="{{ route('admin.holidays.index') }}">Kelola Libur</a>
-        <div class="month-nav">
-          <a class="icon-action" href="{{ route('dashboard', array_merge($activeFilters, ['month' => $prevMonth->month, 'year' => $prevMonth->year])) }}">&lsaquo;</a>
-          <form class="month-jump-form admin-month-jump" method="get" action="{{ route('dashboard') }}">
-            @if ($selectedRole)
-              <input type="hidden" name="jabatan" value="{{ $selectedRole }}">
-            @endif
-            @if ($search)
-              <input type="hidden" name="search" value="{{ $search }}">
-            @endif
-            <select name="month" aria-label="Pilih bulan admin">
-              @for ($monthNumber = 1; $monthNumber <= 12; $monthNumber++)
-                <option value="{{ $monthNumber }}" @selected($month->month === $monthNumber)>{{ $monthNames[$monthNumber] }}</option>
-              @endfor
-            </select>
-            <select name="year" aria-label="Pilih tahun admin">
-              @for ($year = now()->year - 3; $year <= now()->year + 2; $year++)
-                <option value="{{ $year }}" @selected($month->year === $year)>{{ $year }}</option>
-              @endfor
-            </select>
-          </form>
-          <a class="icon-action" href="{{ route('dashboard', array_merge($activeFilters, ['month' => $nextMonth->month, 'year' => $nextMonth->year])) }}">&rsaquo;</a>
-        </div>
-      </div>
-    </div>
-
-    <form class="admin-filter-bar" method="get" action="{{ route('dashboard') }}" id="admin-filter-form">
-      <input type="hidden" name="month" value="{{ $month->month }}">
-      <input type="hidden" name="year" value="{{ $month->year }}">
-      <label class="filter-search">
-        <span>Cari Data</span>
-        <input name="search" value="{{ $search }}" placeholder="Nama, username, email, NIP PJLP, NIK" autocomplete="off" data-live-search>
-      </label>
-      <div class="filter-tabs">
-        <a class="filter-chip {{ $selectedRole ? '' : 'active' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'search' => $search], fn ($value) => filled($value))) }}">Semua</a>
-        @foreach ($jobRoles as $jobRole)
-          <a class="filter-chip {{ $selectedRole === $jobRole ? 'active' : '' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'jabatan' => $jobRole, 'search' => $search], fn ($value) => filled($value))) }}">{{ $jobRole }}</a>
-        @endforeach
-      </div>
-      <button class="primary-action" type="submit">Cari</button>
-      @if ($selectedRole || $search)
-        <a class="ghost-action" href="{{ route('dashboard', ['month' => $month->month, 'year' => $month->year]) }}">Reset</a>
-      @endif
-    </form>
-
-    <div class="table-wrap">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>PJLP</th>
-            <th>NIP PJLP</th>
-            <th>Sudah Diisi</th>
-            <th>Belum Diisi</th>
-            <th>Terakhir Isi</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          @forelse ($pjlpUsers as $person)
-            <tr data-user-row data-search-index="{{ Str::lower($person->name . ' ' . $person->username . ' ' . $person->email . ' ' . $person->nip . ' ' . $person->nik . ' ' . $person->jabatan . ' ' . $person->unit) }}">
-              <td><strong>{{ $person->name }}</strong><br><span class="muted">{{ $person->jabatan ?: 'PJLP' }}</span></td>
-              <td>{{ $person->nip ?: '-' }}</td>
-              <td><span class="status-pill done">{{ $person->stats['done'] }} terisi</span></td>
-              <td><span class="status-pill missing">{{ $person->stats['missing'] }} belum</span></td>
-              <td>{{ $person->latest_entry_date ? $formatDate($person->latest_entry_date) : '-' }}</td>
-              <td>
-                @if ($person->latest_entry_date)
-                  <a class="ghost-action" href="{{ route('admin.reports.show', ['user' => $person, 'date' => \Carbon\Carbon::parse($person->latest_entry_date)->toDateString()]) }}">Laporan</a>
-                @else
-                  -
-                @endif
-              </td>
-            </tr>
-          @empty
-            <tr><td colspan="6">Tidak ada data PJLP yang cocok.</td></tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
+    </aside>
   </section>
 
   <section class="panel" id="monthly">
