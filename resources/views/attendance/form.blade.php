@@ -44,6 +44,7 @@
         <input type="hidden" name="latitude" data-latitude>
         <input type="hidden" name="longitude" data-longitude>
         <input type="hidden" name="accuracy" data-accuracy>
+        <input type="hidden" name="city" data-city>
 
         @if ($type === AttendanceRecord::TYPE_FIELD)
           <label>
@@ -97,6 +98,7 @@
     const longitudeInput = document.querySelector('[data-longitude]');
     const accuracyInput = document.querySelector('[data-accuracy]');
     const locationText = document.querySelector('[data-location-text]');
+    const cityInput = document.querySelector('[data-city]');
     const locationStatus = document.querySelector('[data-location-status]');
     const mapLink = document.querySelector('[data-map-link]');
     const submitButton = document.querySelector('[data-attendance-submit]');
@@ -118,7 +120,20 @@
         || (payload?.display_name ? payload.display_name.split(',').slice(0, 2).join(',').trim() : '');
     };
 
-    const resolveStreetName = async (latitude, longitude) => {
+    const pickCityName = (payload) => {
+      const address = payload?.address || {};
+
+      return address.city
+        || address.town
+        || address.village
+        || address.municipality
+        || address.county
+        || address.state_district
+        || address.state
+        || '';
+    };
+
+    const resolveLocation = async (latitude, longitude) => {
       const url = new URL('https://nominatim.openstreetmap.org/reverse');
       url.search = new URLSearchParams({
         format: 'jsonv2',
@@ -131,10 +146,14 @@
 
       const response = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
       if (!response.ok) {
-        return '';
+        return { street: '', city: '' };
       }
 
-      return pickStreetName(await response.json());
+      const payload = await response.json();
+      return {
+        street: pickStreetName(payload),
+        city: pickCityName(payload),
+      };
     };
 
     if (navigator.geolocation) {
@@ -152,10 +171,11 @@
         submitButton.disabled = false;
         submitButton.textContent = submitLabel;
 
-        resolveStreetName(latitude, longitude).then((streetName) => {
-          if (streetName && (!locationText.value || locationText.value === fallback)) {
-            locationText.value = streetName;
+        resolveLocation(latitude, longitude).then(({ street, city }) => {
+          if (street && (!locationText.value || locationText.value === fallback)) {
+            locationText.value = street;
           }
+          if (city && cityInput) cityInput.value = city;
         }).catch(() => {});
       }, () => {
         locationStatus.textContent = 'GPS belum aktif. Izinkan lokasi atau isi alamat manual.';

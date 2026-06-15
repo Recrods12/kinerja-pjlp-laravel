@@ -73,7 +73,9 @@
         @endif
 
         @if ($record->selfie_path)
-          <img class="attendance-selfie" src="{{ asset('storage/' . $record->selfie_path) }}" alt="Foto selfie {{ $record->label() }}">
+          <a class="selfie-link" href="{{ asset('storage/' . $record->selfie_path) }}" target="_blank" rel="noopener">
+            <img class="attendance-selfie" src="{{ asset('storage/' . $record->selfie_path) }}" alt="Foto selfie {{ $record->label() }}">
+          </a>
         @else
           <p class="muted">Foto selfie belum tersedia.</p>
         @endif

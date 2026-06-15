@@ -1539,9 +1539,15 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 .admin-map {
   min-height: 58px;
 }
+.selfie-link {
+  display: inline-block;
+  justify-self: start;
+}
 .attendance-selfie {
   max-width: 420px;
-  justify-self: start;
+  max-height: none;
+  object-fit: contain;
+  cursor: pointer;
 }
 
 .pagination {
