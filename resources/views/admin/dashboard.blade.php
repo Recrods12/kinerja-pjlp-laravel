@@ -9,6 +9,32 @@
   $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
   $dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
   $monthLabel = $monthNames[$month->month] . ' ' . $month->year;
+  // Daily trend data for chart
+  $dailyLabels = [];
+  $dailyDone = [];
+  $dailyMissing = [];
+  foreach (range(1, $month->daysInMonth) as $day) {
+    $date = $month->copy()->day($day);
+    $iso = $date->toDateString();
+    $doneCount = 0;
+    $missingCount = 0;
+    foreach ($pjlpUsers as $person) {
+      if (in_array($iso, $person->work_dates ?? [], true)) {
+        in_array($iso, $person->entry_dates ?? [], true) ? $doneCount++ : ($date->lte($today) ? $missingCount++ : null);
+      }
+    }
+    $dailyLabels[] = $day;
+    $dailyDone[] = $doneCount;
+    $dailyMissing[] = $missingCount;
+  }
+
+  // Overall totals
+  $totalDoneAll = $roleSummaries->sum('done');
+  $totalMissingAll = $roleSummaries->sum(fn ($r) => $r['total'] - $r['done']);
+
+  // Chart colors per role
+  $chartColors = ['#0d6f4b', '#e8a838', '#3b82f6', '#a855f7', '#ef4444', '#06b6d4', '#f97316', '#84cc16'];
+
   $formatDate = fn ($date) => \Carbon\Carbon::parse($date)->format('d') . ' ' . $monthNames[\Carbon\Carbon::parse($date)->month] . ' ' . \Carbon\Carbon::parse($date)->year;
 @endphp
 
@@ -84,18 +110,34 @@
     <article class="panel insight-panel">
       <div class="panel-header compact">
         <div>
-          <h2>Kategori Kinerja</h2>
-          <p class="muted">Persentase pengisian per jabatan.</p>
+          <h2>Rekap Bulanan</h2>
+          <p class="muted">Total pengisian kinerja {{ $monthLabel }}.</p>
         </div>
       </div>
-      <div class="role-progress-list">
-        @foreach ($roleSummaries as $roleSummary)
-          <div class="role-progress">
-            <span>{{ $roleSummary['name'] }}</span>
-            <div><i style="width: {{ $roleSummary['percentage'] }}%"></i></div>
-            <strong>{{ $roleSummary['percentage'] }}%</strong>
+      <div class="chart-simple-wrap">
+        <div class="chart-donut-box">
+          <canvas id="donutChart"></canvas>
+          <div class="chart-donut-label">
+            <strong>{{ $totalDoneAll + $totalMissingAll > 0 ? round(($totalDoneAll / ($totalDoneAll + $totalMissingAll)) * 100) : 0 }}%</strong>
+            <span>terisi</span>
           </div>
-        @endforeach
+        </div>
+        <div class="chart-donut-legend">
+          <span><i style="background:#0d6f4b"></i> {{ $totalDoneAll }} Sudah Diisi</span>
+          <span><i style="background:#d63c3c"></i> {{ $totalMissingAll }} Belum Diisi</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel insight-panel chart-panel-wide" style="grid-column: span 2;">
+      <div class="panel-header compact">
+        <div>
+          <h2>Kinerja Per Jabatan</h2>
+          <p class="muted">Perbandingan pengisian per posisi.</p>
+        </div>
+      </div>
+      <div class="chart-bar-wrap">
+        <canvas id="barChart"></canvas>
       </div>
     </article>
 
@@ -274,7 +316,173 @@
     </div>
   </section>
 
+  <section class="panel insight-panel chart-panel-line">
+    <div class="panel-header compact">
+      <div>
+        <h2>Tren Pengisian Harian</h2>
+        <p class="muted">Jumlah PJLP yang sudah vs belum mengisi kinerja per tanggal pada {{ $monthLabel }}.</p>
+      </div>
+    </div>
+    <div class="chart-line-wrap">
+      <canvas id="lineChart"></canvas>
+    </div>
+  </section>
+
   <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const textColor = isDark ? '#e2e8f0' : '#33433d';
+      const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+      // --- Donut Chart ---
+      const donutCtx = document.getElementById('donutChart');
+      if (donutCtx) {
+        new Chart(donutCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Sudah Diisi', 'Belum Diisi'],
+            datasets: [{
+              data: [{{ $totalDoneAll }}, {{ $totalMissingAll }}],
+              backgroundColor: ['#0d6f4b', '#d63c3c'],
+              borderWidth: 0,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '70%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ctx.parsed + ' PJLP'
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // --- Bar Chart (Per Jabatan) ---
+      const barCtx = document.getElementById('barChart');
+      if (barCtx) {
+        new Chart(barCtx, {
+          type: 'bar',
+          data: {
+            labels: [
+              @foreach ($roleSummaries as $rs)
+                '{{ $rs['name'] }}',
+              @endforeach
+            ],
+            datasets: [{
+              label: 'Sudah Diisi',
+              data: [
+                @foreach ($roleSummaries as $rs)
+                  {{ $rs['done'] }},
+                @endforeach
+              ],
+              backgroundColor: '#0d6f4b',
+              borderRadius: 4,
+            }, {
+              label: 'Belum Diisi',
+              data: [
+                @foreach ($roleSummaries as $rs)
+                  {{ $rs['total'] - $rs['done'] }},
+                @endforeach
+              ],
+              backgroundColor: '#d63c3c',
+              borderRadius: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: textColor, font: { size: 12 } }
+              }
+            },
+            scales: {
+              x: {
+                stacked: true,
+                ticks: { color: textColor, font: { size: 11 } },
+                grid: { color: gridColor }
+              },
+              y: {
+                stacked: true,
+                beginAtZero: true,
+                ticks: { color: textColor, font: { size: 11 }, stepSize: 1 },
+                grid: { color: gridColor }
+              }
+            }
+          }
+        });
+      }
+
+      // --- Line Chart (Tren Harian) ---
+      const lineCtx = document.getElementById('lineChart');
+      if (lineCtx) {
+        new Chart(lineCtx, {
+          type: 'line',
+          data: {
+            labels: [{{ implode(', ', $dailyLabels) }}],
+            datasets: [{
+              label: 'Sudah Diisi',
+              data: [{{ implode(', ', $dailyDone) }}],
+              borderColor: '#0d6f4b',
+              backgroundColor: 'rgba(13, 111, 75, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+              pointHoverRadius: 6,
+            }, {
+              label: 'Belum Diisi',
+              data: [{{ implode(', ', $dailyMissing) }}],
+              borderColor: '#d63c3c',
+              backgroundColor: 'rgba(214, 60, 60, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+              pointHoverRadius: 6,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              intersect: false,
+              mode: 'index',
+            },
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: textColor, font: { size: 12 } }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y + ' PJLP'
+                }
+              }
+            },
+            scales: {
+              x: {
+                title: { display: true, text: 'Tanggal', color: textColor, font: { size: 11 } },
+                ticks: { color: textColor, font: { size: 10 } },
+                grid: { color: gridColor }
+              },
+              y: {
+                beginAtZero: true,
+                ticks: { color: textColor, font: { size: 11 }, stepSize: 1 },
+                grid: { color: gridColor }
+              }
+            }
+          }
+        });
+      }
+    });
+
+    // --- Existing Live Search ---
     const liveSearchInput = document.querySelector('[data-live-search]');
     const searchableRows = document.querySelectorAll('[data-user-row]');
 
