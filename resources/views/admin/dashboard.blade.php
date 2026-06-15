@@ -219,19 +219,33 @@
             <tr>
               <th>PJLP</th>
               <th>NIP PJLP</th>
-              <th>Sudah Diisi</th>
-              <th>Belum Diisi</th>
+              <th>Jabatan</th>
+              <th>Progres</th>
+              <th>%</th>
               <th>Terakhir Isi</th>
               <th>Aksi</th>
             </tr>
           </thead>
           <tbody>
             @forelse ($pjlpUsers as $person)
+              @php
+                $doneCount = $person->stats['done'];
+                $missingCount = $person->stats['missing'];
+                $totalCount = $doneCount + $missingCount;
+                $pct = $totalCount > 0 ? round(($doneCount / $totalCount) * 100) : 0;
+                $barColor = $pct >= 80 ? '#0d6f4b' : ($pct >= 50 ? '#e8a838' : '#d63c3c');
+              @endphp
               <tr data-user-row data-search-index="{{ Str::lower($person->name . ' ' . $person->username . ' ' . $person->email . ' ' . $person->nip . ' ' . $person->nik . ' ' . $person->jabatan . ' ' . $person->unit) }}">
-                <td><strong>{{ $person->name }}</strong><br><span class="muted">{{ $person->jabatan ?: 'PJLP' }}</span></td>
+                <td><strong>{{ $person->name }}</strong></td>
                 <td>{{ $person->nip ?: '-' }}</td>
-                <td><span class="status-pill done">{{ $person->stats['done'] }} terisi</span></td>
-                <td><span class="status-pill missing">{{ $person->stats['missing'] }} belum</span></td>
+                <td><span class="muted">{{ $person->jabatan ?: 'PJLP' }}</span></td>
+                <td class="admin-progress-cell">
+                  <div class="admin-progress-bar">
+                    <i style="width: {{ $pct }}%; background: {{ $barColor }}"></i>
+                  </div>
+                  <span class="admin-progress-label">{{ $doneCount }}/{{ $totalCount }}</span>
+                </td>
+                <td><strong style="color: {{ $barColor }}">{{ $pct }}%</strong></td>
                 <td>{{ $person->latest_entry_date ? $formatDate($person->latest_entry_date) : '-' }}</td>
                 <td>
                   @if ($person->latest_entry_date)
@@ -242,7 +256,7 @@
                 </td>
               </tr>
             @empty
-              <tr><td colspan="6">Tidak ada data PJLP yang cocok.</td></tr>
+              <tr><td colspan="7">Tidak ada data PJLP yang cocok.</td></tr>
             @endforelse
           </tbody>
         </table>

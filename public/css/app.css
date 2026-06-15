@@ -2974,3 +2974,49 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 .quick-side-panel .sidebar-quick-grid .quick-card span {
   font-size: 11px;
 }
+
+/* ===== Admin Table Progress Bar ===== */
+.admin-progress-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 130px;
+}
+
+.admin-progress-bar {
+  flex: 1;
+  max-width: 100px;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.admin-progress-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.admin-progress-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #33433d;
+  white-space: nowrap;
+}
+
+.admin-table td strong[style] {
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .admin-progress-cell {
+    min-width: auto;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .admin-progress-bar {
+    max-width: 80px;
+  }
+}
