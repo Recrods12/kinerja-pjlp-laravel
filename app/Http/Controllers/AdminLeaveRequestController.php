@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Models\User;
+use App\Models\Notification;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -157,6 +158,14 @@ class AdminLeaveRequestController extends Controller
                     'approved_by' => $request->user()->id,
                     'approved_at' => now(),
                 ]);
+
+                Notification::create([
+                    'user_id' => $leaveRequest->user_id,
+                    'type' => 'leave_approved',
+                    'title' => 'Cuti Disetujui',
+                    'body' => 'Pengajuan cuti ' . $leaveRequest->start_date->format('d/m/Y') . ' - ' . $leaveRequest->end_date->format('d/m/Y') . ' (' . $leaveRequest->total_days . ' ' . $leaveRequest->duration_unit . ') telah disetujui.',
+                    'link' => route('leave.show', $leaveRequest),
+                ]);
             });
         } catch (ValidationException $exception) {
             return back()->withErrors($exception->errors())->withInput();
@@ -184,6 +193,14 @@ class AdminLeaveRequestController extends Controller
                     'admin_note' => $data['admin_note'] ?? null,
                     'approved_by' => $request->user()->id,
                     'approved_at' => now(),
+                ]);
+
+                Notification::create([
+                    'user_id' => $leaveRequest->user_id,
+                    'type' => 'leave_rejected',
+                    'title' => 'Cuti Ditolak',
+                    'body' => 'Pengajuan cuti ' . $leaveRequest->start_date->format('d/m/Y') . ' - ' . $leaveRequest->end_date->format('d/m/Y') . ' (' . $leaveRequest->total_days . ' ' . $leaveRequest->duration_unit . ') ditolak.' . ($data['admin_note'] ? ' Alasan: ' . $data['admin_note'] : ''),
+                    'link' => route('leave.show', $leaveRequest),
                 ]);
             });
         } catch (ValidationException $exception) {

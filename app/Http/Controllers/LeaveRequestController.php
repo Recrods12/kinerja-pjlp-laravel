@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Models\User;
+use App\Models\Notification;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -117,11 +118,23 @@ class LeaveRequestController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $user->leaveRequests()->create([
+            $leaveRequest = $user->leaveRequests()->create([
                 ...$data,
                 'total_days' => $totalDays,
                 'status' => LeaveRequest::STATUS_PENDING,
             ]);
+
+            // Notify admin
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'type' => 'leave_submitted',
+                    'title' => 'Pengajuan Cuti Baru',
+                    'body' => $user->name . ' mengajukan cuti ' . $leaveRequest->total_days . ' ' . $leaveRequest->duration_unit . ' (' . $leaveRequest->start_date->format('d/m/Y') . ' - ' . $leaveRequest->end_date->format('d/m/Y') . ').',
+                    'link' => route('admin.leave.show', $leaveRequest),
+                ]);
+            }
         });
 
         return redirect()
