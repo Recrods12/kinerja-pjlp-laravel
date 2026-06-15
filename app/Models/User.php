@@ -65,21 +65,6 @@ class User extends Authenticatable
         return $this->hasMany(AttendanceRecord::class);
     }
 
-    public function division()
-    {
-        return $this->belongsTo(Division::class);
-    }
-
-    public function bookings()
-    {
-        return $this->hasMany(Booking::class);
-    }
-
-    public function approvedBookings()
-    {
-        return $this->hasMany(Booking::class, 'approved_by');
-    }
-
     public function usesSecurityShift(): bool
     {
         return $this->jabatan === 'Keamanan'
