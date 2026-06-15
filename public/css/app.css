@@ -2966,7 +2966,6 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  padding-top: 8px;
 }
 
 .chart-donut-label strong {
@@ -3011,6 +3010,9 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 
 .rekap-chart-area .chart-donut-label strong {
   font-size: 22px;
+}
+.rekap-chart-area .chart-donut-label {
+  padding-top: 6px;
 }
 
 .rekap-chart-area .chart-donut-legend {
