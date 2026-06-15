@@ -2957,6 +2957,32 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   }
 }
 
+
+.chart-donut-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding-top: 8px;
+}
+
+.chart-donut-label strong {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary, #1a2e26);
+  line-height: 1.1;
+}
+
+.chart-donut-label span {
+  font-size: 11px;
+  color: var(--text-muted, #6b7b73);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* ===== Rekap Bulanan Panel ===== */
 .rekap-panel {
   min-height: auto;
@@ -2978,6 +3004,7 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 }
 
 .rekap-chart-area .chart-donut-box {
+  position: relative;
   width: 120px;
   height: 120px;
 }
