@@ -35,26 +35,36 @@
         left: 11mm;
         right: 11mm;
         font-size: 10px;
+        border-collapse: collapse;
+        width: 275mm;
       }
-      .pdf-meta-left,
-      .pdf-meta-right {
-        position: absolute;
-        top: 0;
+      .pdf-meta-col {
+        width: 50%;
+        vertical-align: top;
+        padding: 0;
+      }
+      .pdf-meta-table {
+        border-collapse: collapse;
         width: 120mm;
       }
-      .pdf-meta-left { left: 0; }
-      .pdf-meta-right { left: 146mm; }
-      .pdf-meta-line {
+      .pdf-meta-table tr {
         line-height: 4.7mm;
-        white-space: nowrap;
       }
-      .pdf-meta-label {
-        display: inline-block;
+      .pdf-meta-lbl {
         width: 22mm;
+        vertical-align: top;
+        padding: 0;
+        font-weight: normal;
       }
-      .pdf-meta-separator {
-        display: inline-block;
+      .pdf-meta-colon {
         width: 5mm;
+        vertical-align: top;
+        padding: 0;
+      }
+      .pdf-meta-val {
+        vertical-align: top;
+        padding: 0;
+        white-space: nowrap;
       }
       .pdf-table {
         position: absolute;
@@ -171,17 +181,23 @@
           TAHUN {{ $leftDate->year }}
         </div>
 
-        <div class="pdf-meta">
-          <div class="pdf-meta-left">
-            <div class="pdf-meta-line"><span class="pdf-meta-label">NAMA</span><span class="pdf-meta-separator">:</span><strong>{{ $targetName }}</strong></div>
-            <div class="pdf-meta-line"><span class="pdf-meta-label">HARI</span><span class="pdf-meta-separator">:</span>{{ $leftDate->translatedFormat('l') }}</div>
-            <div class="pdf-meta-line"><span class="pdf-meta-label">TANGGAL</span><span class="pdf-meta-separator">:</span>{{ $leftDate->translatedFormat('d F Y') }}</div>
-          </div>
-          <div class="pdf-meta-right">
-            <div class="pdf-meta-line"><span class="pdf-meta-label">HARI</span><span class="pdf-meta-separator">:</span>{{ $rightDate ? $rightDate->translatedFormat('l') : '' }}</div>
-            <div class="pdf-meta-line"><span class="pdf-meta-label">TANGGAL</span><span class="pdf-meta-separator">:</span>{{ $rightDate ? $rightDate->translatedFormat('d F Y') : '' }}</div>
-          </div>
-        </div>
+        <table class="pdf-meta">
+          <tr>
+            <td class="pdf-meta-col">
+              <table class="pdf-meta-table">
+                <tr><td class="pdf-meta-lbl">NAMA</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val"><strong>{{ $targetName }}</strong></td></tr>
+                <tr><td class="pdf-meta-lbl">HARI</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $leftDate->translatedFormat('l') }}</td></tr>
+                <tr><td class="pdf-meta-lbl">TANGGAL</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $leftDate->translatedFormat('d F Y') }}</td></tr>
+              </table>
+            </td>
+            <td class="pdf-meta-col">
+              <table class="pdf-meta-table">
+                <tr><td class="pdf-meta-lbl">HARI</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('l') : '' }}</td></tr>
+                <tr><td class="pdf-meta-lbl">TANGGAL</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('d F Y') : '' }}</td></tr>
+              </table>
+            </td>
+          </tr>
+        </table>
 
         @include('reports.pdf-table', ['items' => $page['leftEntries']->take(15)->values(), 'side' => 'left'])
         @include('reports.pdf-table', ['items' => $page['rightEntries']->take(15)->values(), 'side' => 'right'])
