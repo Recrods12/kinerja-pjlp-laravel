@@ -23,12 +23,21 @@ class ProfileController extends Controller
             'unit' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'signature' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'current_password' => ['nullable', 'required_with:password', 'string'],
             'password' => ['nullable', 'confirmed', Password::min(6)],
         ]);
 
         $user = Auth::user();
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar_path) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+
+            $data['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+        }
 
         if ($request->hasFile('signature')) {
             if ($user->signature_path) {
@@ -50,7 +59,7 @@ class ProfileController extends Controller
             unset($data['password']);
         }
 
-        unset($data['current_password'], $data['password_confirmation'], $data['signature']);
+        unset($data['current_password'], $data['password_confirmation'], $data['avatar'], $data['signature']);
 
         $user->update($data);
 

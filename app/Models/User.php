@@ -25,6 +25,7 @@ use Illuminate\Notifications\Notifiable;
     'phone',
     'address',
     'signature_path',
+    'avatar_path',
     'annual_leave_quota',
     'annual_leave_remaining',
     'password',

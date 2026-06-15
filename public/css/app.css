@@ -376,6 +376,18 @@ textarea { min-height: 96px; resize: vertical; }
   height: 34px;
   font-size: 13px;
 }
+img.avatar {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 999px;
+}
+img.brand-mark {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+}
 
 .user-chip small {
   color: var(--muted);
@@ -2107,6 +2119,10 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
     gap: 12px;
   }
   .brand-mark {
+  img.brand-mark {
+    width: 44px;
+    height: 44px;
+  }
     width: 44px;
     height: 44px;
     font-size: 20px;

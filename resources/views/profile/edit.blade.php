@@ -47,6 +47,24 @@
         <textarea name="address">{{ old('address', $user->address) }}</textarea>
       </label>
       <div class="form-divider full-width">
+        <strong>Foto Profil</strong>
+        <span>Upload foto profil format JPG, PNG, atau WEBP. Maksimal 5 MB.</span>
+      </div>
+      <label>
+        <span>Upload Foto Profil</span>
+        <input name="avatar" type="file" accept="image/jpeg,image/png,image/webp">
+      </label>
+      <div>
+        <span style="display: block; margin-bottom: 7px; color: #33433d; font-size: 13px; font-weight: 800;">Preview</span>
+        @if ($user->avatar_path)
+          <div class="signature-preview-box">
+            <img src="{{ asset('storage/' . $user->avatar_path) }}" alt="Foto {{ $user->name }}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 999px;">
+          </div>
+        @else
+          <p class="muted">Belum ada foto profil.</p>
+        @endif
+      </div>
+      <div class="form-divider full-width">
         <strong>Tanda Tangan Digital</strong>
         <span>Upload gambar tanda tangan format PNG, JPG, JPEG, atau WEBP. Gunakan background transparan/putih agar hasil cetak rapi.</span>
       </div>

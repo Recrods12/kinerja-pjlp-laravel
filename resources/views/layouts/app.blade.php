@@ -64,7 +64,11 @@
       <div class="app-shell">
         <aside class="app-sidebar" id="app-sidebar">
           <a class="sidebar-brand" href="{{ route('dashboard') }}">
-            <span class="brand-mark">K</span>
+            @if ($authUser->avatar_path)
+              <img class="brand-mark" src="{{ asset('storage/' . $authUser->avatar_path) }}" alt="Foto {{ $authUser->name }}">
+            @else
+              <span class="brand-mark">K</span>
+            @endif
             <span>
               <strong>Kinerja Harian PJLP</strong>
               <small>{{ $authUser->name }} &middot; {{ strtoupper($authUser->role) }}</small>
@@ -108,7 +112,11 @@
               <span>{{ now()->format('d/m/Y') }}</span>
             </div>
             <a class="user-chip" href="{{ route('profile.edit') }}">
-              <span class="avatar">{{ $initials }}</span>
+              @if ($authUser->avatar_path)
+                <img class="avatar" src="{{ asset('storage/' . $authUser->avatar_path) }}" alt="Foto {{ $authUser->name }}">
+              @else
+                <span class="avatar">{{ $initials }}</span>
+              @endif
               <span>
                 <strong>{{ $authUser->name }}</strong>
                 <small>{{ $authUser->jabatan ?: strtoupper($authUser->role) }}</small>
