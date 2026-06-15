@@ -192,6 +192,7 @@
             </td>
             <td class="pdf-meta-col">
               <table class="pdf-meta-table">
+                <tr><td class="pdf-meta-lbl">&nbsp;</td><td class="pdf-meta-colon">&nbsp;</td><td class="pdf-meta-val">&nbsp;</td></tr>
                 <tr><td class="pdf-meta-lbl">HARI</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('l') : '' }}</td></tr>
                 <tr><td class="pdf-meta-lbl">TANGGAL</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('d F Y') : '' }}</td></tr>
               </table>
