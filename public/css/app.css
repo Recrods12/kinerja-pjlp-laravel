@@ -2199,6 +2199,13 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   }
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

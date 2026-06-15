@@ -111,35 +111,37 @@
               <strong>{{ $isAdmin ? 'Dashboard Admin' : 'Dashboard PJLP' }}</strong>
               <span>{{ now()->format('d/m/Y') }}</span>
             </div>
-            <div class="notif-wrap">
-              <button class="notif-bell" type="button" id="notif-toggle" aria-label="Notifikasi">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
-                <span class="notif-badge" id="notif-badge" style="display:none">0</span>
-              </button>
-              <div class="notif-dropdown" id="notif-dropdown">
-                <div class="notif-header">
-                  <strong>Notifikasi</strong>
-                  <button type="button" class="notif-mark-all" id="notif-mark-all">Baca Semua</button>
-                </div>
-                <div class="notif-list" id="notif-list">
-                  <div class="notif-empty">Tidak ada notifikasi</div>
+            <div class="topbar-right">
+              <div class="notif-wrap">
+                <button class="notif-bell" type="button" id="notif-toggle" aria-label="Notifikasi">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                  <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+                </button>
+                <div class="notif-dropdown" id="notif-dropdown">
+                  <div class="notif-header">
+                    <strong>Notifikasi</strong>
+                    <button type="button" class="notif-mark-all" id="notif-mark-all">Baca Semua</button>
+                  </div>
+                  <div class="notif-list" id="notif-list">
+                    <div class="notif-empty">Tidak ada notifikasi</div>
+                  </div>
                 </div>
               </div>
+              <a class="user-chip" href="{{ route('profile.edit') }}">
+                @if ($authUser->avatar_path)
+                  <img class="avatar" src="{{ asset('storage/' . $authUser->avatar_path) }}" alt="Foto {{ $authUser->name }}">
+                @else
+                  <span class="avatar">{{ $initials }}</span>
+                @endif
+                <span>
+                  <strong>{{ $authUser->name }}</strong>
+                  <small>{{ $authUser->jabatan ?: strtoupper($authUser->role) }}</small>
+                </span>
+              </a>
             </div>
-            <a class="user-chip" href="{{ route('profile.edit') }}">
-              @if ($authUser->avatar_path)
-                <img class="avatar" src="{{ asset('storage/' . $authUser->avatar_path) }}" alt="Foto {{ $authUser->name }}">
-              @else
-                <span class="avatar">{{ $initials }}</span>
-              @endif
-              <span>
-                <strong>{{ $authUser->name }}</strong>
-                <small>{{ $authUser->jabatan ?: strtoupper($authUser->role) }}</small>
-              </span>
-            </a>
           </header>
     @endauth
 
