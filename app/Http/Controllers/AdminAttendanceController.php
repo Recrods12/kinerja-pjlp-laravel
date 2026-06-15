@@ -79,8 +79,8 @@ class AdminAttendanceController extends Controller
                 echo '<tr>';
                 echo '<td class="center">' . e($index + 1) . '</td>';
                 echo '<td>' . e($user->name) . '</td>';
-                echo '<td class="center">' . e($user->nip ?: '-') . '</td>';
-                echo '<td class="center">' . e($user->nik ?: '-') . '</td>';
+                echo '<td class="center" style="mso-number-format:\\@">' . e($user->nip ?: '-') . '</td>';
+                echo '<td class="center" style="mso-number-format:\\@">' . e($user->nik ?: '-') . '</td>';
                 echo '<td>' . e($user->jabatan ?: 'PJLP') . '</td>';
                 echo '<td class="center">' . e($this->dateLabel($date)) . '</td>';
                 echo '<td class="center">' . e($this->timeCell($start)) . '</td>';
