@@ -2988,9 +2988,11 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 
 .rekap-chart-area .chart-donut-legend {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 4px;
 }
 
 .rekap-chart-area .chart-donut-legend span {
@@ -3013,3 +3015,60 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   padding: 10px 12px;
 }
 
+
+.rekap-stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.rekap-stat-icon i {
+  font-size: 13px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: 1;
+}
+
+.rekap-stat-icon.blue  { background: #3b82f6; }
+.rekap-stat-icon.green { background: #0d6f4b; }
+.rekap-stat-icon.gold  { background: #e8a838; }
+.rekap-stat-icon.info  { background: #06b6d4; }
+
+.rekap-stat div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.rekap-stat strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a2e26;
+}
+
+.rekap-stat small {
+  font-size: 10px;
+  color: #6b7b73;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+@media (max-width: 768px) {
+  .rekap-stats-col {
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .rekap-stats-col {
+    grid-template-columns: 1fr;
+  }
+}
