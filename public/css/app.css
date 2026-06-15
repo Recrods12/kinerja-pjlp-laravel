@@ -3020,7 +3020,7 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 20px;
   margin-top: 4px;
 }
 
