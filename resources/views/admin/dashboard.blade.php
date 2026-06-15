@@ -129,6 +129,22 @@
       </div>
     </article>
 
+    <article class="panel insight-panel quick-side-panel">
+      <div class="panel-header compact">
+        <div>
+          <h2>Quick Action</h2>
+          <p class="muted">Akses cepat admin.</p>
+        </div>
+      </div>
+      <div class="quick-grid sidebar-quick-grid">
+        <a class="quick-card green" href="{{ route('admin.attendance.index') }}"><strong>Dashboard Absensi</strong><span>Pantau hadir, dinas luar, izin, dan alfa</span></a>
+        <a class="quick-card green" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Download PDF</strong><span>Semua laporan sesuai filter</span></a>
+        <a class="quick-card gold" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Export Excel</strong><span>Data kinerja bulanan</span></a>
+        <a class="quick-card blue" href="{{ route('admin.users.index') }}"><strong>Kelola User</strong><span>Tambah dan edit PJLP</span></a>
+        <a class="quick-card red" href="{{ route('admin.holidays.index') }}"><strong>Kelola Libur</strong><span>Libur nasional dan manual</span></a>
+      </div>
+    </article>
+
     <article class="panel insight-panel chart-panel-wide" style="grid-column: span 2;">
       <div class="panel-header compact">
         <div>
@@ -142,8 +158,8 @@
     </article>
   </section>
 
-  <section class="dashboard-admin-split">
-    <section class="panel dashboard-table-panel">
+  
+    <section class="panel">
       <div class="panel-header">
         <div>
           <h2>Dashboard Admin</h2>
@@ -232,23 +248,7 @@
         </table>
       </div>
     </section>
-
-    <aside class="panel dashboard-quick-sidebar">
-      <div class="panel-header compact">
-        <div>
-          <h2>Quick Action</h2>
-          <p class="muted">Akses cepat pekerjaan admin.</p>
-        </div>
-      </div>
-      <div class="quick-grid sidebar-quick-grid">
-        <a class="quick-card green" href="{{ route('admin.attendance.index') }}"><strong>Dashboard Absensi</strong><span>Pantau hadir, dinas luar, izin, dan alfa</span></a>
-        <a class="quick-card green" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Download PDF</strong><span>Semua laporan sesuai filter</span></a>
-        <a class="quick-card gold" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Export Excel</strong><span>Data kinerja bulanan</span></a>
-        <a class="quick-card blue" href="{{ route('admin.users.index') }}"><strong>Kelola User</strong><span>Tambah dan edit PJLP</span></a>
-        <a class="quick-card red" href="{{ route('admin.holidays.index') }}"><strong>Kelola Libur</strong><span>Libur nasional dan manual</span></a>
-      </div>
-    </aside>
-  </section>
+  
 
   <section class="panel" id="monthly">
     <div class="panel-header">

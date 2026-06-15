@@ -2950,40 +2950,27 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 }
 
 /* ===== Dashboard Split Layout (Table + Quick Action Sidebar) ===== */
-.dashboard-admin-split {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: 20px;
-  margin-bottom: 24px;
+
+
+/* ===== Quick Action Side Panel in Dashboard Board ===== */
+.quick-side-panel {
+  display: flex;
+  flex-direction: column;
 }
 
-.dashboard-table-panel {
-  min-width: 0;
-}
-
-.dashboard-quick-sidebar {
-  align-self: start;
-  position: sticky;
-  top: 88px;
-}
-
-.sidebar-quick-grid {
+.quick-side-panel .sidebar-quick-grid {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 4px 16px 20px;
+  flex: 1;
 }
 
-.sidebar-quick-grid .quick-card {
+.quick-side-panel .sidebar-quick-grid .quick-card {
   width: 100%;
   margin: 0;
 }
 
-@media (max-width: 1024px) {
-  .dashboard-admin-split {
-    grid-template-columns: 1fr;
-  }
-  .dashboard-quick-sidebar {
-    position: static;
-  }
+.quick-side-panel .sidebar-quick-grid .quick-card span {
+  font-size: 11px;
 }
