@@ -2002,8 +2002,8 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   height: 38px;
   border: 0;
   border-radius: 10px;
-  background: transparent;
-  color: var(--text, #1d2623);
+  background: rgba(13, 111, 75, .07);
+  color: #0d6f4b;
   cursor: pointer;
   transition: background .15s ease, color .15s ease, transform .12s ease;
   outline: none;
