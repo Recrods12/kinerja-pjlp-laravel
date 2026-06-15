@@ -2842,71 +2842,7 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 }
 
 /* ===== Chart Styles ===== */
-.chart-simple-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 16px 20px;
-}
 
-.chart-donut-box {
-  position: relative;
-  width: 140px;
-  height: 140px;
-}
-
-.chart-donut-box canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.chart-donut-label {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.chart-donut-label strong {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--text-primary, #1a2e26);
-  line-height: 1.1;
-}
-
-.chart-donut-label span {
-  font-size: 11px;
-  color: var(--text-muted, #6b7b73);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.chart-donut-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 24px;
-  justify-content: center;
-}
-
-.chart-donut-legend span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-primary, #1a2e26);
-}
-
-.chart-donut-legend i {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
 
 .chart-bar-wrap {
   width: 100%;
@@ -3018,5 +2954,211 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   }
   .admin-progress-bar {
     max-width: 80px;
+  }
+}
+
+/* ===== Rekap Bulanan Panel ===== */
+.rekap-panel {
+  min-height: auto;
+}
+
+.rekap-grid {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px 20px;
+  align-items: center;
+}
+
+.rekap-chart-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.rekap-chart-col .chart-donut-box {
+  width: 120px;
+  height: 120px;
+}
+
+.rekap-chart-col .chart-donut-label strong {
+  font-size: 22px;
+}
+
+.rekap-chart-col .chart-donut-legend {
+  gap: 8px 16px;
+}
+
+.rekap-chart-col .chart-donut-legend span {
+  font-size: 11px;
+}
+
+.rekap-stats-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  flex: 1;
+}
+
+.rekap-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8faf9;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* ===== Rekap Bulanan Panel ===== */
+.rekap-panel {
+  min-height: auto;
+}
+
+.rekap-grid {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px 20px;
+  align-items: center;
+}
+
+.rekap-chart-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.rekap-chart-col .chart-donut-box {
+  width: 120px;
+  height: 120px;
+}
+
+.rekap-chart-col .chart-donut-label strong {
+  font-size: 22px;
+}
+
+.rekap-chart-col .chart-donut-legend {
+  gap: 8px 16px;
+}
+
+.rekap-chart-col .chart-donut-legend span {
+  font-size: 11px;
+}
+
+.rekap-stats-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  flex: 1;
+}
+
+.rekap-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8faf9;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.rekap-stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.rekap-stat-icon i {
+  font-size: 13px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: 1;
+}
+
+.rekap-stat-icon.blue  { background: #3b82f6; }
+.rekap-stat-icon.green { background: #0d6f4b; }
+.rekap-stat-icon.gold  { background: #e8a838; }
+.rekap-stat-icon.info  { background: #06b6d4; }
+
+.rekap-stat div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.rekap-stat strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a2e26;
+}
+
+.rekap-stat small {
+  font-size: 10px;
+  color: #6b7b73;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+@media (max-width: 768px) {
+  .rekap-grid {
+    flex-direction: column;
+  }
+  .rekap-stats-col {
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .rekap-stats-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rekap-stat-icon.blue  { background: #3b82f6; }
+.rekap-stat-icon.green { background: #0d6f4b; }
+.rekap-stat-icon.gold  { background: #e8a838; }
+.rekap-stat-icon.info  { background: #06b6d4; }
+
+.rekap-stat div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.rekap-stat strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a2e26;
+}
+
+.rekap-stat small {
+  font-size: 10px;
+  color: #6b7b73;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+@media (max-width: 768px) {
+  .rekap-grid {
+    flex-direction: column;
+  }
+  .rekap-stats-col {
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .rekap-stats-col {
+    grid-template-columns: 1fr;
   }
 }

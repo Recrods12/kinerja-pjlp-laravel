@@ -105,26 +105,66 @@
           <p class="muted">Belum ada pengajuan cuti terbaru.</p>
         @endforelse
       </div>
-    </article>
-
-    <article class="panel insight-panel">
+    </article>    <article class="panel insight-panel rekap-panel">
       <div class="panel-header compact">
         <div>
           <h2>Rekap Bulanan</h2>
-          <p class="muted">Total pengisian kinerja {{ $monthLabel }}.</p>
+          <p class="muted">Kinerja {{ $monthLabel }} &mdash; {{ $adminStats['totalPjlp'] }} PJLP</p>
         </div>
       </div>
-      <div class="chart-simple-wrap">
-        <div class="chart-donut-box">
-          <canvas id="donutChart"></canvas>
-          <div class="chart-donut-label">
-            <strong>{{ $totalDoneAll + $totalMissingAll > 0 ? round(($totalDoneAll / ($totalDoneAll + $totalMissingAll)) * 100) : 0 }}%</strong>
-            <span>terisi</span>
+      <div class="rekap-grid">
+        <div class="rekap-chart-col">
+          <div class="chart-donut-box">
+            <canvas id="donutChart"></canvas>
+            <div class="chart-donut-label">
+              <strong>{{ $totalDoneAll + $totalMissingAll > 0 ? round(($totalDoneAll / ($totalDoneAll + $totalMissingAll)) * 100) : 0 }}%</strong>
+              <span>terisi</span>
+            </div>
+          </div>
+          <div class="chart-donut-legend">
+            <span><i style="background:#0d6f4b"></i> {{ $totalDoneAll }} Sudah Diisi</span>
+            <span><i style="background:#d63c3c"></i> {{ $totalMissingAll }} Belum Diisi</span>
           </div>
         </div>
-        <div class="chart-donut-legend">
-          <span><i style="background:#0d6f4b"></i> {{ $totalDoneAll }} Sudah Diisi</span>
-          <span><i style="background:#d63c3c"></i> {{ $totalMissingAll }} Belum Diisi</span>
+        <div class="rekap-stats-col">
+          @php
+            $totalPjlp = $adminStats['totalPjlp'];
+            $workDaysCount = 0;
+            foreach ($monthDates as $d) {
+              if (!$d->isWeekend() && !isset($holidayDates[$d->toDateString()]) && $d->lte($today)) {
+                $workDaysCount++;
+              }
+            }
+            $avgPerDay = $workDaysCount > 0 ? round($totalDoneAll / $workDaysCount, 1) : 0;
+          @endphp
+          <div class="rekap-stat">
+            <span class="rekap-stat-icon blue"><i>PD</i></span>
+            <div>
+              <strong>{{ $totalPjlp }}</strong>
+              <small>Total PJLP</small>
+            </div>
+          </div>
+          <div class="rekap-stat">
+            <span class="rekap-stat-icon green"><i>OK</i></span>
+            <div>
+              <strong>{{ $totalDoneAll }}</strong>
+              <small>Total Entri Terisi</small>
+            </div>
+          </div>
+          <div class="rekap-stat">
+            <span class="rekap-stat-icon gold"><i>HK</i></span>
+            <div>
+              <strong>{{ $workDaysCount }}</strong>
+              <small>Hari Kerja (terlampaui)</small>
+            </div>
+          </div>
+          <div class="rekap-stat">
+            <span class="rekap-stat-icon info"><i>Ø</i></span>
+            <div>
+              <strong>{{ $avgPerDay }}</strong>
+              <small>Rata-rata isian/hari</small>
+            </div>
+          </div>
         </div>
       </div>
     </article>
