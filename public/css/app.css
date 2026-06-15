@@ -2964,33 +2964,33 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 
 .rekap-grid {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 16px;
   padding: 8px 16px 20px;
-  align-items: center;
 }
 
-.rekap-chart-col {
+.rekap-chart-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 8px;
 }
 
-.rekap-chart-col .chart-donut-box {
+.rekap-chart-area .chart-donut-box {
   width: 120px;
   height: 120px;
 }
 
-.rekap-chart-col .chart-donut-label strong {
+.rekap-chart-area .chart-donut-label strong {
   font-size: 22px;
 }
 
-.rekap-chart-col .chart-donut-legend {
+.rekap-chart-area .chart-donut-legend {
   gap: 8px 16px;
 }
 
-.rekap-chart-col .chart-donut-legend span {
+.rekap-chart-area .chart-donut-legend span {
   font-size: 11px;
 }
 
@@ -3017,33 +3017,33 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 
 .rekap-grid {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 16px;
   padding: 8px 16px 20px;
-  align-items: center;
 }
 
-.rekap-chart-col {
+.rekap-chart-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 8px;
 }
 
-.rekap-chart-col .chart-donut-box {
+.rekap-chart-area .chart-donut-box {
   width: 120px;
   height: 120px;
 }
 
-.rekap-chart-col .chart-donut-label strong {
+.rekap-chart-area .chart-donut-label strong {
   font-size: 22px;
 }
 
-.rekap-chart-col .chart-donut-legend {
+.rekap-chart-area .chart-donut-legend {
   gap: 8px 16px;
 }
 
-.rekap-chart-col .chart-donut-legend span {
+.rekap-chart-area .chart-donut-legend span {
   font-size: 11px;
 }
 
@@ -3108,12 +3108,15 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 }
 
 @media (max-width: 768px) {
-  .rekap-grid {
-    flex-direction: column;
-  }
   .rekap-stats-col {
     grid-template-columns: 1fr 1fr;
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .rekap-stats-col {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3148,12 +3151,15 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 }
 
 @media (max-width: 768px) {
-  .rekap-grid {
-    flex-direction: column;
-  }
   .rekap-stats-col {
     grid-template-columns: 1fr 1fr;
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .rekap-stats-col {
+    grid-template-columns: 1fr;
   }
 }
 

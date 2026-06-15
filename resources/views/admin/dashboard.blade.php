@@ -113,7 +113,7 @@
         </div>
       </div>
       <div class="rekap-grid">
-        <div class="rekap-chart-col">
+        <div class="rekap-chart-area">
           <div class="chart-donut-box">
             <canvas id="donutChart"></canvas>
             <div class="chart-donut-label">
