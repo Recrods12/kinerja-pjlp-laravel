@@ -88,9 +88,22 @@ class AttendanceController extends Controller
             'recorded_at' => $now,
         ]);
 
+        // Notifikasi admin
+        $typeLabel = AttendanceRecord::labels()[$type];
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'attendance_' . $type,
+                'title' => $typeLabel . ' — ' . $user->name,
+                'body' => $user->name . ' melakukan ' . strtolower($typeLabel) . ' pada ' . $now->format('d/m/Y H:i') . ' WIB.',
+                'link' => route('admin.attendance.index'),
+            ]);
+        }
+
         return redirect()
             ->route('attendance.index')
-            ->with('status', AttendanceRecord::labels()[$type] . ' berhasil disimpan.');
+            ->with('status', $typeLabel . ' berhasil disimpan.');
     }
 
     public function show(Request $request, AttendanceRecord $attendanceRecord)
