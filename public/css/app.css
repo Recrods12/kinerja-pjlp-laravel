@@ -3637,3 +3637,312 @@ a.mini-item:hover {
     gap: 2px;
   }
 }
+
+/* ───────────────────────────────────────────────
+   ENHANCEMENT ROUND 2 — Quick Action, Avatar, Chart, Mobile, Filter
+   ─────────────────────────────────────────────── */
+
+/* 1. Quick Action — Icon + Left Accent Bar */
+.sidebar-quick-grid .quick-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-quick-grid .quick-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  transition: top .2s ease, bottom .2s ease;
+}
+
+.sidebar-quick-grid .quick-card:hover::before {
+  top: 3px;
+  bottom: 3px;
+}
+
+.sidebar-quick-grid .quick-card.green::before { background: var(--green, #0d6f4b); }
+.sidebar-quick-grid .quick-card.gold::before  { background: var(--gold, #e8a838); }
+.sidebar-quick-grid .quick-card.blue::before  { background: var(--blue, #3b82f6); }
+.sidebar-quick-grid .quick-card.red::before   { background: var(--red, #d63c3c); }
+
+.quick-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255,255,255,.7);
+  transition: transform .2s ease;
+}
+
+.quick-card:hover .quick-icon {
+  transform: scale(1.1);
+}
+
+.quick-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.quick-text strong {
+  font-size: 13.5px;
+}
+
+.quick-text span {
+  font-size: 11px;
+  color: var(--muted, #6b7b73);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-quick-grid {
+  gap: 8px;
+}
+
+
+/* 2. Table — Avatar Circle + Row Striping */
+.admin-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: transform .2s ease;
+  letter-spacing: .3px;
+}
+
+tr:hover .admin-avatar {
+  transform: scale(1.12);
+}
+
+/* Subtle row striping */
+.admin-table tbody tr:nth-child(even) {
+  background: rgba(0,0,0,.015);
+}
+
+.admin-table tbody tr:hover {
+  background: rgba(13,111,75,.04);
+}
+
+
+/* 4. Mobile — Stacking Layout */
+@media (max-width: 900px) {
+  .dashboard-board {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-board.user-board {
+    grid-template-columns: 1fr;
+  }
+
+  .rekap-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rekap-chart-area {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .rekap-stats-col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .quick-side-panel {
+    order: 10;
+  }
+
+  .chart-panel-wide {
+    grid-column: 1 !important;
+  }
+
+  .chart-panel-line .chart-line-wrap {
+    min-height: 200px;
+  }
+
+  /* Mini items stack vertically on small screens */
+  .mini-item {
+    grid-template-columns: 34px 1fr;
+    gap: 8px;
+  }
+
+  .mini-meta {
+    grid-column: 2;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  .mini-meta .status-pill {
+    margin-top: 0;
+  }
+
+  /* Admin table scroll horizontal */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-filter-bar {
+    flex-wrap: wrap;
+  }
+
+  .filter-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .filter-chip {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Page heading */
+  .page-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .page-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .month-nav {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-progress-cell {
+    min-width: 100px;
+  }
+
+  .rekap-stat {
+    padding: 8px;
+  }
+
+  .card.stat {
+    padding: 12px;
+  }
+
+  .modern-stat i {
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+    border-radius: 14px;
+  }
+
+  .modern-stat strong {
+    font-size: 16px;
+  }
+
+  .admin-toolbar .primary-action,
+  .admin-toolbar .ghost-action {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}
+
+
+/* 5. Filter Chip — Active State Lebih Jelas */
+.filter-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--muted, #6b7b73);
+  background: rgba(107,123,115,.08);
+  border: 1px solid transparent;
+  transition: all .2s ease;
+  text-decoration: none;
+}
+
+.filter-chip:hover {
+  background: rgba(107,123,115,.14);
+  color: var(--text, #25312d);
+}
+
+.filter-chip.active {
+  background: rgba(13,111,75,.12);
+  color: var(--green, #0d6f4b);
+  border-color: rgba(13,111,75,.30);
+  box-shadow: 0 0 0 3px rgba(13,111,75,.08);
+  position: relative;
+}
+
+.filter-chip.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 30%;
+  right: 30%;
+  height: 2px;
+  background: var(--green, #0d6f4b);
+  border-radius: 2px;
+}
+
+/* Badge count on filter */
+.filter-chip .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  background: rgba(107,123,115,.14);
+  color: var(--muted, #6b7b73);
+}
+
+.filter-chip.active .badge {
+  background: rgba(13,111,75,.16);
+  color: var(--green, #0d6f4b);
+}

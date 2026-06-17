@@ -53,6 +53,13 @@
   ];
   $defaultJabatanColor = ['bg' => '#6b7b73', 'soft' => 'rgba(107,123,115,.14)'];
   $jabatanColor = fn ($jabatan) => $jabatanColors[$jabatan] ?? $defaultJabatanColor;
+
+  // Role count map for filter badges
+  $roleCountMap = [];
+  foreach ($roleSummaries as $rs) {
+    $roleCountMap[$rs['name']] = $rs['total'];
+  }
+  $totalPjlpCount = array_sum($roleCountMap);
 @endphp
 
 @section('content')
@@ -217,11 +224,41 @@
         </div>
       </div>
       <div class="quick-grid sidebar-quick-grid">
-        <a class="quick-card green" href="{{ route('admin.attendance.index') }}"><strong>Dashboard Absensi</strong><span>Pantau hadir, dinas luar, izin, dan alfa</span></a>
-        <a class="quick-card green" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Download PDF</strong><span>Semua laporan sesuai filter</span></a>
-        <a class="quick-card gold" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}"><strong>Export Excel</strong><span>Data kinerja bulanan</span></a>
-        <a class="quick-card blue" href="{{ route('admin.users.index') }}"><strong>Kelola User</strong><span>Tambah dan edit PJLP</span></a>
-        <a class="quick-card red" href="{{ route('admin.holidays.index') }}"><strong>Kelola Libur</strong><span>Libur nasional dan manual</span></a>
+        <a class="quick-card green" href="{{ route('admin.attendance.index') }}">
+          <span class="quick-icon">📋</span>
+          <span class="quick-text">
+            <strong>Dashboard Absensi</strong>
+            <span>Pantau hadir, dinas luar, izin, dan alfa</span>
+          </span>
+        </a>
+        <a class="quick-card green" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">
+          <span class="quick-icon">📄</span>
+          <span class="quick-text">
+            <strong>Download PDF</strong>
+            <span>Semua laporan sesuai filter</span>
+          </span>
+        </a>
+        <a class="quick-card gold" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">
+          <span class="quick-icon">📊</span>
+          <span class="quick-text">
+            <strong>Export Excel</strong>
+            <span>Data kinerja bulanan</span>
+          </span>
+        </a>
+        <a class="quick-card blue" href="{{ route('admin.users.index') }}">
+          <span class="quick-icon">👥</span>
+          <span class="quick-text">
+            <strong>Kelola User</strong>
+            <span>Tambah dan edit PJLP</span>
+          </span>
+        </a>
+        <a class="quick-card red" href="{{ route('admin.holidays.index') }}">
+          <span class="quick-icon">📅</span>
+          <span class="quick-text">
+            <strong>Kelola Libur</strong>
+            <span>Libur nasional dan manual</span>
+          </span>
+        </a>
       </div>
     </article>
 
@@ -282,9 +319,9 @@
           <input name="search" value="{{ $search }}" placeholder="Nama, username, email, NIP PJLP, NIK" autocomplete="off" data-live-search>
         </label>
         <div class="filter-tabs">
-          <a class="filter-chip {{ $selectedRole ? '' : 'active' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'search' => $search], fn ($value) => filled($value))) }}">Semua</a>
+          <a class="filter-chip {{ $selectedRole ? '' : 'active' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'search' => $search], fn ($value) => filled($value))) }}">Semua <span class="badge">{{ $totalPjlpCount }}</span></a>
           @foreach ($jobRoles as $jobRole)
-            <a class="filter-chip {{ $selectedRole === $jobRole ? 'active' : '' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'jabatan' => $jobRole, 'search' => $search], fn ($value) => filled($value))) }}">{{ $jobRole }}</a>
+            <a class="filter-chip {{ $selectedRole === $jobRole ? 'active' : '' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'jabatan' => $jobRole, 'search' => $search], fn ($value) => filled($value))) }}">{{ $jobRole }} <span class="badge">{{ $roleCountMap[$jobRole] ?? 0 }}</span></a>
           @endforeach
         </div>
         <button class="primary-action" type="submit">Cari</button>
@@ -316,7 +353,10 @@
                 $barColor = $pct >= 80 ? '#0d6f4b' : ($pct >= 50 ? '#e8a838' : '#d63c3c');
               @endphp
               <tr data-user-row data-search-index="{{ Str::lower($person->name . ' ' . $person->username . ' ' . $person->email . ' ' . $person->nip . ' ' . $person->nik . ' ' . $person->jabatan . ' ' . $person->unit) }}">
-                <td><strong>{{ $person->name }}</strong></td>
+                <td class="admin-user-cell">
+                  <span class="admin-avatar" style="background: {{ $jabatanColor($person->jabatan ?: 'PJLP')['bg'] }}">{{ \Illuminate\Support\Str::substr($person->name, 0, 1) }}</span>
+                  <strong>{{ $person->name }}</strong>
+                </td>
                 <td>{{ $person->nip ?: '-' }}</td>
                 <td><span class="muted">{{ $person->jabatan ?: 'PJLP' }}</span></td>
                 <td class="admin-progress-cell">
@@ -516,10 +556,10 @@
         });
       }
 
-      // --- Line Chart (Tren Harian) ---
+      // --- Line Chart (Tren Harian) --- with gradient fill
       const lineCtx = document.getElementById('lineChart');
       if (lineCtx) {
-        new Chart(lineCtx, {
+        const lineChart = new Chart(lineCtx, {
           type: 'line',
           data: {
             labels: [{{ implode(', ', $dailyLabels) }}],
@@ -527,20 +567,44 @@
               label: 'Sudah Diisi',
               data: [{{ implode(', ', $dailyDone) }}],
               borderColor: '#0d6f4b',
-              backgroundColor: 'rgba(13, 111, 75, 0.1)',
+              backgroundColor: function(context) {
+                const chart = context.chart;
+                const {ctx, chartArea} = chart;
+                if (!chartArea) return 'rgba(13,111,75,0.1)';
+                const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                gradient.addColorStop(0, 'rgba(13,111,75,0.40)');
+                gradient.addColorStop(0.5, 'rgba(13,111,75,0.20)');
+                gradient.addColorStop(1, 'rgba(13,111,75,0.02)');
+                return gradient;
+              },
               fill: true,
-              tension: 0.3,
+              tension: 0.35,
               pointRadius: 3,
               pointHoverRadius: 6,
+              pointBackgroundColor: '#0d6f4b',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
             }, {
               label: 'Belum Diisi',
               data: [{{ implode(', ', $dailyMissing) }}],
               borderColor: '#d63c3c',
-              backgroundColor: 'rgba(214, 60, 60, 0.1)',
+              backgroundColor: function(context) {
+                const chart = context.chart;
+                const {ctx, chartArea} = chart;
+                if (!chartArea) return 'rgba(214,60,60,0.1)';
+                const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                gradient.addColorStop(0, 'rgba(214,60,60,0.40)');
+                gradient.addColorStop(0.5, 'rgba(214,60,60,0.20)');
+                gradient.addColorStop(1, 'rgba(214,60,60,0.02)');
+                return gradient;
+              },
               fill: true,
-              tension: 0.3,
+              tension: 0.35,
               pointRadius: 3,
               pointHoverRadius: 6,
+              pointBackgroundColor: '#d63c3c',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
             }]
           },
           options: {
