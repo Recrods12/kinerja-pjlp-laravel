@@ -54,11 +54,8 @@
   $defaultJabatanColor = ['bg' => '#6b7b73', 'soft' => 'rgba(107,123,115,.14)'];
   $jabatanColor = fn ($jabatan) => $jabatanColors[$jabatan] ?? $defaultJabatanColor;
 
-  // Role count map for filter badges
-  $roleCountMap = [];
-  foreach ($roleSummaries as $rs) {
-    $roleCountMap[$rs['name']] = $rs['total'];
-  }
+  // Role count map for filter badges (from unfiltered controller data)
+  $roleCountMap = $roleTotalCounts;
   $totalPjlpCount = array_sum($roleCountMap);
 @endphp
 

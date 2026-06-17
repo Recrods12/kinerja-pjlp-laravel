@@ -55,6 +55,13 @@ class DashboardController extends Controller
         $latestEntryDate = PerformanceEntry::query()->latest('work_date')->value('work_date');
         $defaultMonth = $latestEntryDate ? Carbon::parse($latestEntryDate) : now();
         $jobRoles = ['Driver', 'Kebersihan', 'Keamanan', 'Mekanikal Enginer', 'Pelayanan Umum'];
+        // Total user count per role (unfiltered) for filter badges
+        $roleTotalCounts = User::query()
+            ->where('role', 'pjlp')
+            ->selectRaw('COALESCE(NULLIF(jabatan, \'\'), \'Lainnya\') as jabatan, COUNT(*) as total')
+            ->groupBy('jabatan')
+            ->pluck('total', 'jabatan')
+            ->all();
         $selectedRole = $request->query('jabatan');
         $search = trim((string) $request->query('search', ''));
 
@@ -128,6 +135,7 @@ class DashboardController extends Controller
                 ->latest()
                 ->limit(5)
                 ->get(),
+            'roleTotalCounts' => $roleTotalCounts,
             'roleSummaries' => collect($jobRoles)->map(function (string $jobRole) use ($pjlpUsers) {
                 $users = $pjlpUsers->where('jabatan', $jobRole);
                 $done = $users->sum(fn (User $user) => $user->stats['done']);
