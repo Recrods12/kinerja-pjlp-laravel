@@ -96,7 +96,11 @@
             $entryTime = $entry->work_time ?: ($entry->created_at ? $entry->created_at->format('H:i') : '');
           @endphp
           <a class="mini-item" href="{{ route('admin.reports.show', ['user' => $entry->user, 'date' => \Carbon\Carbon::parse($entry->work_date)->toDateString()]) }}">
-            <span class="avatar small" style="background: {{ $entryColor['bg'] }}">{{ \Illuminate\Support\Str::substr($entry->user?->name ?? 'P', 0, 1) }}</span>
+            @if ($entry->user?->avatar_path)
+              <img class="avatar small" src="{{ asset('storage/' . $entry->user->avatar_path) }}" alt="Foto {{ $entry->user->name }}">
+            @else
+              <span class="avatar small" style="background: {{ $entryColor['bg'] }}">{{ \Illuminate\Support\Str::substr($entry->user?->name ?? 'P', 0, 1) }}</span>
+            @endif
             <span>
               <strong>{{ $entry->user?->name ?? 'PJLP' }}</strong>
               <small>{{ $entryJabatan }}</small>
@@ -134,7 +138,11 @@
             $leaveRemaining = $leave->user?->annual_leave_remaining ?? '-';
           @endphp
           <a class="mini-item" href="{{ route('admin.leave.show', $leave) }}">
-            <span class="avatar small {{ $leaveStatus }}">{{ \Illuminate\Support\Str::substr($leave->user?->name ?? 'C', 0, 1) }}</span>
+            @if ($leave->user?->avatar_path)
+              <img class="avatar small {{ $leaveStatus }}" src="{{ asset('storage/' . $leave->user->avatar_path) }}" alt="Foto {{ $leave->user->name }}">
+            @else
+              <span class="avatar small {{ $leaveStatus }}">{{ \Illuminate\Support\Str::substr($leave->user?->name ?? 'C', 0, 1) }}</span>
+            @endif
             <span>
               <strong>{{ $leave->user?->name ?? 'PJLP' }}</strong>
               <small>{{ $formatDate($leave->start_date) }} - {{ $formatDate($leave->end_date) }}</small>
@@ -351,7 +359,11 @@
               @endphp
               <tr data-user-row data-search-index="{{ Str::lower($person->name . ' ' . $person->username . ' ' . $person->email . ' ' . $person->nip . ' ' . $person->nik . ' ' . $person->jabatan . ' ' . $person->unit) }}">
                 <td class="admin-user-cell">
-                  <span class="admin-avatar" style="background: {{ $jabatanColor($person->jabatan ?: 'PJLP')['bg'] }}">{{ \Illuminate\Support\Str::substr($person->name, 0, 1) }}</span>
+                  @if ($person->avatar_path)
+                    <img class="admin-avatar" src="{{ asset('storage/' . $person->avatar_path) }}" alt="Foto {{ $person->name }}">
+                  @else
+                    <span class="admin-avatar" style="background: {{ $jabatanColor($person->jabatan ?: 'PJLP')['bg'] }}">{{ \Illuminate\Support\Str::substr($person->name, 0, 1) }}</span>
+                  @endif
                   <strong>{{ $person->name }}</strong>
                 </td>
                 <td>{{ $person->nip ?: '-' }}</td>

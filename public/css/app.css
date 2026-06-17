@@ -376,6 +376,13 @@ textarea { min-height: 96px; resize: vertical; }
   height: 34px;
   font-size: 13px;
 }
+
+img.avatar.small {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 999px;
+}
 img.avatar {
   width: 42px;
   height: 42px;
