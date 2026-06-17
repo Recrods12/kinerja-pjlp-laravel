@@ -36,6 +36,27 @@
   $chartColors = ['#0d6f4b', '#e8a838', '#3b82f6', '#a855f7', '#ef4444', '#06b6d4', '#f97316', '#84cc16'];
 
   $formatDate = fn ($date) => \Carbon\Carbon::parse($date)->format('d') . ' ' . $monthNames[\Carbon\Carbon::parse($date)->month] . ' ' . \Carbon\Carbon::parse($date)->year;
+
+  // Relative time helper
+  $timeAgo = function ($dateTime) {
+    $diff = now()->diffInSeconds($dateTime);
+    if ($diff < 60) return 'baru saja';
+    if ($diff < 3600) return round($diff / 60) . ' menit lalu';
+    if ($diff < 86400) return round($diff / 3600) . ' jam lalu';
+    if ($diff < 604800) return round($diff / 86400) . ' hari lalu';
+    return \Carbon\Carbon::parse($dateTime)->format('d/m');
+  };
+
+  // Jabatan color mapping for avatar badges
+  $jabatanColors = [
+    'Driver' => ['bg' => '#3b82f6', 'soft' => 'rgba(59,130,246,.14)'],
+    'Kebersihan' => ['bg' => '#0d6f4b', 'soft' => 'rgba(13,111,75,.14)'],
+    'Keamanan' => ['bg' => '#ef4444', 'soft' => 'rgba(239,68,68,.14)'],
+    'Mekanikal Enginer' => ['bg' => '#a855f7', 'soft' => 'rgba(168,85,247,.14)'],
+    'Pelayanan Umum' => ['bg' => '#e8a838', 'soft' => 'rgba(232,168,56,.14)'],
+  ];
+  $defaultJabatanColor = ['bg' => '#6b7b73', 'soft' => 'rgba(107,123,115,.14)'];
+  $jabatanColor = fn ($jabatan) => $jabatanColors[$jabatan] ?? $defaultJabatanColor;
 @endphp
 
 @section('content')
@@ -69,13 +90,26 @@
       </div>
       <div class="mini-list">
         @forelse ($recentEntries as $entry)
+          @php
+            $entryJabatan = $entry->user?->jabatan ?: 'PJLP';
+            $entryColor = $jabatanColor($entryJabatan);
+            $entryTime = $entry->work_time ?: ($entry->created_at ? $entry->created_at->format('H:i') : '');
+          @endphp
           <a class="mini-item" href="{{ route('admin.reports.show', ['user' => $entry->user, 'date' => \Carbon\Carbon::parse($entry->work_date)->toDateString()]) }}">
-            <span class="avatar small">{{ \Illuminate\Support\Str::substr($entry->user?->name ?? 'P', 0, 1) }}</span>
+            <span class="avatar small" style="background: {{ $entryColor['bg'] }}">{{ \Illuminate\Support\Str::substr($entry->user?->name ?? 'P', 0, 1) }}</span>
             <span>
               <strong>{{ $entry->user?->name ?? 'PJLP' }}</strong>
-              <small>{{ $entry->user?->jabatan ?: 'PJLP' }} - {{ $formatDate($entry->work_date) }}</small>
+              <small>{{ $entryJabatan }}</small>
+              @if ($entry->task)
+                <span class="mini-preview">{{ \Illuminate\Support\Str::limit($entry->task, 50) }}</span>
+              @endif
             </span>
-            <em class="status-pill done">Sudah diisi</em>
+            <span class="mini-meta">
+              <em class="mini-time">{{ $timeAgo($entry->updated_at ?? $entry->created_at) }}</em>
+              @if ($entryTime)
+                <em class="mini-clock">{{ $entryTime }} WIB</em>
+              @endif
+            </span>
           </a>
         @empty
           <p class="muted">Belum ada kinerja terbaru pada bulan ini.</p>
@@ -93,13 +127,23 @@
       </div>
       <div class="mini-list">
         @forelse ($recentLeaveRequests as $leave)
+          @php
+            $leaveStatus = $leave->status === 'approved' ? 'done' : ($leave->status === 'rejected' ? 'missing' : 'pending');
+            $leaveStatusLabel = $leave->status === 'approved' ? 'Disetujui' : ($leave->status === 'rejected' ? 'Ditolak' : 'Menunggu');
+            $leaveDays = $leave->total_days . ' ' . ($leave->duration_unit ?? 'hari');
+            $leaveRemaining = $leave->user?->annual_leave_remaining ?? '-';
+          @endphp
           <a class="mini-item" href="{{ route('admin.leave.show', $leave) }}">
-            <span class="avatar small">{{ \Illuminate\Support\Str::substr($leave->user?->name ?? 'C', 0, 1) }}</span>
+            <span class="avatar small {{ $leaveStatus }}">{{ \Illuminate\Support\Str::substr($leave->user?->name ?? 'C', 0, 1) }}</span>
             <span>
               <strong>{{ $leave->user?->name ?? 'PJLP' }}</strong>
               <small>{{ $formatDate($leave->start_date) }} - {{ $formatDate($leave->end_date) }}</small>
+              <span class="mini-preview">{{ $leaveDays }} &middot; Sisa {{ $leaveRemaining }} hari</span>
             </span>
-            <em class="status-pill {{ $leave->status === 'approved' ? 'done' : ($leave->status === 'rejected' ? 'missing' : 'pending') }}">{{ ucfirst($leave->status) }}</em>
+            <span class="mini-meta">
+              <em class="mini-time">{{ $timeAgo($leave->created_at) }}</em>
+              <em class="status-pill {{ $leaveStatus }}">{{ $leaveStatusLabel }}</em>
+            </span>
           </a>
         @empty
           <p class="muted">Belum ada pengajuan cuti terbaru.</p>

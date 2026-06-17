@@ -3546,3 +3546,94 @@ a.mini-item:hover {
 /* ───────────────────────────────────────────────
    END FACE-LIFT
    ─────────────────────────────────────────────── */
+
+/* ───────────────────────────────────────────────
+   ENHANCED MINI ITEMS (Kinerja Terbaru & Cuti)
+   ─────────────────────────────────────────────── */
+
+/* Avatar with jabatan color */
+.mini-item .avatar.small {
+  transition: all .25s ease;
+  flex-shrink: 0;
+}
+
+.mini-item:hover .avatar.small {
+  transform: scale(1.08);
+}
+
+/* Preview teks */
+.mini-preview {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted, #6b7b73);
+  font-size: 11.5px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+/* Meta column (time + status) */
+.mini-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.mini-time {
+  font-size: 10.5px;
+  color: var(--muted, #6b7b73);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mini-clock {
+  font-size: 10.5px;
+  color: var(--muted, #6b7b73);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Status pill inside mini-meta */
+.mini-meta .status-pill {
+  font-size: 10px;
+  padding: 2px 8px;
+}
+
+/* Adjust mini-item grid for new layout */
+.mini-item {
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+/* Avatar status variants for leave */
+.avatar.small.done {
+  background: var(--green, #0d6f4b) !important;
+}
+
+.avatar.small.missing {
+  background: var(--red, #d63c3c) !important;
+}
+
+.avatar.small.pending {
+  background: var(--gold, #e8a838) !important;
+}
+
+/* Leave status label in meta */
+.mini-meta .status-pill {
+  margin-top: 2px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .mini-preview {
+    max-width: 120px;
+  }
+
+  .mini-meta {
+    gap: 2px;
+  }
+}
