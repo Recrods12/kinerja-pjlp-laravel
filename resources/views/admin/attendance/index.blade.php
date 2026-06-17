@@ -131,7 +131,11 @@
               <tr class="{{ $selectedUser && $selectedUser->id === $user->id ? 'is-selected' : '' }}">
                 <td>{{ $loop->iteration }}</td>
                 <td class="admin-user-cell">
-                  <span class="admin-avatar" style="background: {{ $jabatanColor($user->jabatan ?: 'PJLP')['bg'] }}">{{ \Illuminate\Support\Str::substr($user->name, 0, 1) }}</span>
+                  @if ($user->avatar_path)
+                    <img class="admin-avatar" src="{{ asset('storage/' . $user->avatar_path) }}" alt="Foto {{ $user->name }}">
+                  @else
+                    <span class="admin-avatar" style="background: {{ $jabatanColor($user->jabatan ?: 'PJLP')['bg'] }}">{{ \Illuminate\Support\Str::substr($user->name, 0, 1) }}</span>
+                  @endif
                   <a class="attendance-user-link" href="{{ $detailUrl }}" title="Lihat detail absensi {{ $user->name }}">
                     <strong>{{ $user->name }}</strong>
                     <span>{{ $user->nip ?: '-' }}</span>
@@ -197,7 +201,11 @@
       </div>
       @if ($selectedUser)
         <div class="attendance-profile">
-          <span class="admin-avatar big" style="background: {{ $jabatanColor($selectedUser->jabatan ?: 'PJLP')['bg'] }}">{{ strtoupper(substr($selectedUser->name, 0, 1)) }}</span>
+          @if ($selectedUser->avatar_path)
+            <img class="admin-avatar big" src="{{ asset('storage/' . $selectedUser->avatar_path) }}" alt="Foto {{ $selectedUser->name }}">
+          @else
+            <span class="admin-avatar big" style="background: {{ $jabatanColor($selectedUser->jabatan ?: 'PJLP')['bg'] }}">{{ strtoupper(substr($selectedUser->name, 0, 1)) }}</span>
+          @endif
           <div>
             <strong>{{ $selectedUser->name }}</strong>
             <span class="muted">{{ $selectedUser->jabatan ?: 'PJLP' }}</span>

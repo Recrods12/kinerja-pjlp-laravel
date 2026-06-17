@@ -4139,6 +4139,17 @@ tr:hover .admin-avatar {
    ATTENDANCE ADMIN — Seragamkan dengan Dashboard
    ─────────────────────────────────────────────── */
 
+
+/* Image avatar (foto profil) */
+img.admin-avatar {
+  object-fit: cover;
+  display: inline-block;
+}
+
+img.admin-avatar.big {
+  object-fit: cover;
+  display: inline-block;
+}
 /* Side panel avatar big */
 .admin-avatar.big {
   width: 44px;
