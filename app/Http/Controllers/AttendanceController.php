@@ -200,6 +200,18 @@ class AttendanceController extends Controller
             ]);
         }
 
+        if ($type === AttendanceRecord::TYPE_START && $records->has(AttendanceRecord::TYPE_END)) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Absen awal tidak bisa dibuat karena sudah ada absen akhir hari ini.',
+            ]);
+        }
+
+        if ($type === AttendanceRecord::TYPE_START && $now->hour >= 12) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Absen awal hanya bisa dilakukan sebelum pukul 12.00.',
+            ]);
+        }
+
         if ($type === AttendanceRecord::TYPE_END) {
             if ($now->hour < 12) {
                 throw ValidationException::withMessages([

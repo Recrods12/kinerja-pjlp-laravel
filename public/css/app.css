@@ -4134,3 +4134,212 @@ tr:hover .admin-avatar {
     min-height: 0;
   }
 }
+
+/* ───────────────────────────────────────────────
+   ATTENDANCE ADMIN — Seragamkan dengan Dashboard
+   ─────────────────────────────────────────────── */
+
+/* Side panel avatar big */
+.admin-avatar.big {
+  width: 44px;
+  height: 44px;
+  font-size: 16px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  flex-shrink: 0;
+  letter-spacing: .3px;
+}
+
+/* Attendance profile in side panel */
+.attendance-profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line, rgba(0,0,0,.06));
+}
+
+.attendance-profile strong {
+  font-size: 15px;
+}
+
+.attendance-side-card {
+  padding: 0 0 16px;
+  min-width: 260px;
+}
+
+.attendance-side-card .panel-header {
+  padding: 16px 18px 8px;
+}
+
+.attendance-side-card .panel-header h2 {
+  font-size: 16px;
+}
+
+/* Detail list inside side card */
+.detail-list {
+  padding: 12px 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.detail-list div {
+  display: grid;
+  gap: 2px;
+}
+
+.detail-list dt {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted, #6b7b73);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.detail-list dd {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Map card */
+.attendance-map-card {
+  margin: 0 18px 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(244,246,245,.7);
+  border: 1px solid var(--line, rgba(0,0,0,.06));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attendance-map-card span {
+  font-size: 12px;
+  color: var(--muted, #6b7b73);
+  line-height: 1.4;
+}
+
+.attendance-map-card a {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--blue, #3b82f6);
+}
+
+/* Table row striping & hover — seragam dengan admin dashboard */
+.attendance-table tbody tr:nth-child(even) {
+  background: rgba(0,0,0,.015);
+}
+
+.attendance-table tbody tr:hover {
+  background: rgba(13,111,75,.04);
+}
+
+.attendance-table tbody tr.is-selected {
+  background: rgba(13,111,75,.08) !important;
+  box-shadow: inset 3px 0 0 var(--green, #0d6f4b);
+}
+
+/* Time cell refinement */
+.attendance-time-cell .time-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(13,111,75,.1);
+  color: var(--green, #0d6f4b);
+  font-size: 10px;
+  font-weight: 900;
+  margin-right: 4px;
+}
+
+.attendance-time-cell .time-check.field {
+  background: rgba(59,130,246,.1);
+  color: var(--blue, #3b82f6);
+}
+
+/* Info banner refinement */
+.attendance-info-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  background: rgba(13,111,75,.06);
+  border: 1px solid rgba(13,111,75,.14);
+  color: var(--muted, #6b7b73);
+  font-size: 13px;
+}
+
+.attendance-info-banner i {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(13,111,75,.12);
+  color: var(--green, #0d6f4b);
+  font-style: normal;
+  font-weight: 900;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* User link in table */
+.attendance-user-link {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-decoration: none;
+}
+
+.attendance-user-link strong {
+  font-size: 13.5px;
+}
+
+.attendance-user-link span {
+  font-size: 11px;
+  color: var(--muted, #6b7b73);
+}
+
+/* Mobile responsive */
+@media (max-width: 900px) {
+  .attendance-admin-board {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-side-card {
+    min-width: 0;
+  }
+
+  .attendance-table th:nth-child(3),
+  .attendance-table td:nth-child(3),
+  .attendance-table th:nth-child(6),
+  .attendance-table td:nth-child(6),
+  .attendance-table th:nth-child(8),
+  .attendance-table td:nth-child(8) {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .attendance-table th:nth-child(4),
+  .attendance-table td:nth-child(4),
+  .attendance-table th:nth-child(5),
+  .attendance-table td:nth-child(5) {
+    font-size: 12px;
+  }
+
+  .attendance-time-cell {
+    white-space: nowrap;
+  }
+
+  .attendance-info-banner {
+    font-size: 12px;
+    padding: 10px 14px;
+  }
+}
