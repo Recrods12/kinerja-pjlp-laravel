@@ -37,14 +37,10 @@
 
   $formatDate = fn ($date) => \Carbon\Carbon::parse($date)->format('d') . ' ' . $monthNames[\Carbon\Carbon::parse($date)->month] . ' ' . \Carbon\Carbon::parse($date)->year;
 
-  // Relative time helper
+  // Relative time helper - pakai Carbon diffForHumans
   $timeAgo = function ($dateTime) {
-    $diff = now()->diffInSeconds($dateTime);
-    if ($diff < 60) return 'baru saja';
-    if ($diff < 3600) return round($diff / 60) . ' menit lalu';
-    if ($diff < 86400) return round($diff / 3600) . ' jam lalu';
-    if ($diff < 604800) return round($diff / 86400) . ' hari lalu';
-    return \Carbon\Carbon::parse($dateTime)->format('d/m');
+    if (! $dateTime) return '-';
+    return \Carbon\Carbon::parse($dateTime)->diffForHumans(['parts' => 1]);
   };
 
   // Jabatan color mapping for avatar badges
