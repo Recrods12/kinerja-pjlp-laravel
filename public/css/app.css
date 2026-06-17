@@ -3946,3 +3946,191 @@ tr:hover .admin-avatar {
   background: rgba(13,111,75,.16);
   color: var(--green, #0d6f4b);
 }
+
+/* ───────────────────────────────────────────────
+   PJLP DASHBOARD — Quick Action Icons (sama dengan admin)
+   ─────────────────────────────────────────────── */
+.user-board .quick-grid .quick-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.user-board .quick-grid .quick-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  transition: top .2s ease, bottom .2s ease;
+}
+
+.user-board .quick-grid .quick-card:hover::before {
+  top: 3px;
+  bottom: 3px;
+}
+
+.user-board .quick-grid .quick-card.green::before { background: var(--green, #0d6f4b); }
+.user-board .quick-grid .quick-card.gold::before  { background: var(--gold, #e8a838); }
+.user-board .quick-grid .quick-card.blue::before  { background: var(--blue, #3b82f6); }
+.user-board .quick-grid .quick-card.red::before   { background: var(--red, #d63c3c); }
+
+
+/* ───────────────────────────────────────────────
+   SIDEBAR NAV — Refinement
+   ─────────────────────────────────────────────── */
+
+/* Right accent glow for active link */
+.sidebar-link.active {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08),
+              0 4px 16px rgba(24, 177, 105, .12),
+              -3px 0 0 rgba(24, 177, 105, .4);
+  border-left: 0;
+}
+
+/* Better icon inside active link */
+.sidebar-link.active span {
+  background: linear-gradient(135deg, rgba(24,177,105,.35), rgba(24,177,105,.20));
+  color: #fff;
+  transform: scale(1.05);
+}
+
+/* Hover: gentle glow + translate */
+.sidebar-link:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+}
+
+/* Link icon hover state */
+.sidebar-link:hover span {
+  background: rgba(255,255,255,.18);
+  transform: scale(1.08);
+}
+
+/* Subtle divider between nav groups */
+.sidebar-group + .sidebar-group {
+  position: relative;
+  padding-top: 4px;
+}
+
+.sidebar-group + .sidebar-group::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 4px;
+  right: 4px;
+  height: 1px;
+  background: rgba(255,255,255,.08);
+  border-radius: 1px;
+}
+
+/* Logout button refinement */
+.sidebar-logout button {
+  width: 100%;
+  padding: 11px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  color: rgba(255,255,255,.72);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.sidebar-logout button:hover {
+  background: rgba(239,68,68,.18);
+  border-color: rgba(239,68,68,.3);
+  color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+
+/* ───────────────────────────────────────────────
+   CALENDAR — Refinement
+   ─────────────────────────────────────────────── */
+.day-cell {
+  position: relative;
+  transition: all .2s ease;
+}
+
+.day-cell.done {
+  background: linear-gradient(145deg, #d4f5e4, #b8e9d0);
+  border-color: rgba(20,122,85,.30);
+  color: #0a4d2e;
+  font-weight: 800;
+}
+
+.day-cell.missing {
+  background: linear-gradient(145deg, #fde8e4, #fccfc4);
+  border-color: rgba(200,67,67,.28);
+  color: #7a1f1f;
+  font-weight: 800;
+}
+
+.day-cell.selected {
+  outline: 3px solid rgba(189,139,46,.35);
+  border-color: var(--gold);
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+.day-cell.done::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--green, #0d6f4b);
+  opacity: .6;
+}
+
+.day-cell.missing::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--red, #d63c3c);
+  opacity: .6;
+}
+
+
+/* ───────────────────────────────────────────────
+   MOBILE — PJLP dashboard
+   ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .user-board .quick-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-board .quick-grid .quick-card {
+    padding: 10px 12px;
+  }
+
+  .day-cell.selected {
+    transform: scale(1.03);
+  }
+}
+
+@media (max-width: 640px) {
+  .user-board {
+    gap: 12px;
+  }
+
+  .user-board .panel.insight-panel {
+    min-height: 0;
+  }
+}
