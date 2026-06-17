@@ -226,12 +226,6 @@ class AttendanceController extends Controller
                     'attendance' => 'Dinas luar tidak bisa dipilih karena sudah ada absen awal atau akhir hari ini.',
                 ]);
             }
-
-            if ($now->hour >= 12) {
-                throw ValidationException::withMessages([
-                    'attendance' => 'Absen Dinas Luar hanya bisa dilakukan sebelum pukul 12.00.',
-                ]);
-            }
         }
     }
 
@@ -248,7 +242,7 @@ class AttendanceController extends Controller
             ],
             AttendanceRecord::TYPE_FIELD => [
                 'Dinas luar digunakan jika bertugas di luar kantor seharian.',
-                'Cukup absen satu kali sebelum pukul 12.00 dan isi tujuan tugas.',
+                'Cukup absen satu kali dan isi tujuan tugas. Mencakup absen awal dan akhir.',
             ],
             default => [],
         };
