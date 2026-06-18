@@ -6,6 +6,7 @@ use App\Models\AttendanceRecord;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -123,7 +124,7 @@ class AdminAttendanceController extends Controller
 
         $leaveDates = [];
         foreach ($allLeaves as $leave) {
-            $period = \Carbon\CarbonPeriod::create($leave->start_date, $leave->end_date);
+            $period = CarbonPeriod::create($leave->start_date, $leave->end_date);
             foreach ($period as $d) {
                 $leaveDates[$leave->user_id][$d->toDateString()] = true;
             }
@@ -137,82 +138,87 @@ class AdminAttendanceController extends Controller
             }
         }
 
-        $statusLabels = $this->statusLabels();
         $monthLabel = $this->monthLabel($month);
         $fileName = 'rekap-absensi-bulanan-' . $month->format('Y-m') . '.xls';
 
-        return response()->streamDownload(function () use ($users, $days, $allRecords, $leaveDates, $statusLabels, $monthLabel) {
+        return response()->streamDownload(function () use ($users, $days, $allRecords, $leaveDates, $monthLabel) {
             echo '<!doctype html><html><head><meta charset="utf-8">';
             echo '<style>
-                table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 10px; }
-                th { background: #dff6e8; font-weight: bold; text-align: center; vertical-align: middle; }
-                th, td { border: 1px solid #333; padding: 3px 4px; }
+                table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; }
+                th { background: #dff6e8; font-weight: bold; text-align: center; }
+                th, td { border: 1px solid #333; padding: 5px 6px; vertical-align: top; }
                 .center { text-align: center; }
+                .wrap { mso-number-format:"\@"; white-space: normal; }
                 .title { font-size: 14px; font-weight: bold; border: 0; padding: 6px 0; }
-                .hadir { background: #dff6e8; }
-                .dinas_luar { background: #dbeafe; }
-                .izin { background: #fef3c7; }
-                .alfa { background: #ffe7e3; }
             </style></head><body>';
             echo '<table>';
-            echo '<tr><td class="title" colspan="' . (count($days) + 5) . '">Rekap Absensi Bulanan PJLP ' . e($monthLabel) . '</td></tr>';
+            echo '<tr><td class="title" colspan="12">Rekap Absensi Bulanan PJLP ' . e($monthLabel) . '</td></tr>';
             echo '<tr>';
-            echo '<th rowspan="2">No</th>';
-            echo '<th rowspan="2">Nama Pegawai</th>';
-            echo '<th rowspan="2">NIP PJLP</th>';
-            echo '<th rowspan="2">Jabatan</th>';
-            foreach ($days as $day) {
-                echo '<th>' . e($day->translatedFormat('D')) . '</th>';
-            }
-            echo '<th rowspan="2">Hadir</th>';
-            echo '</tr><tr>';
-            foreach ($days as $day) {
-                echo '<th>' . $day->day . '</th>';
-            }
+            echo '<th>No</th>';
+            echo '<th>Nama Pegawai</th>';
+            echo '<th>NIP PJLP</th>';
+            echo '<th>NIK</th>';
+            echo '<th>Jabatan / Bidang</th>';
+            echo '<th>Tanggal</th>';
+            echo '<th>Absen Awal</th>';
+            echo '<th>Absen Akhir</th>';
+            echo '<th>Dinas Luar</th>';
+            echo '<th>Status</th>';
+            echo '<th>Lokasi Terakhir</th>';
+            echo '<th>Catatan / Tujuan</th>';
             echo '</tr>';
 
-            foreach ($users as $index => $user) {
-                $hadirCount = 0;
-                echo '<tr>';
-                echo '<td class="center">' . e($index + 1) . '</td>';
-                echo '<td>' . e($user->name) . '</td>';
-                echo '<td class="center" style="mso-number-format:\\@">' . e($user->nip ?: '-') . '</td>';
-                echo '<td>' . e($user->jabatan ?: 'PJLP') . '</td>';
-
+            $index = 0;
+            foreach ($users as $user) {
                 foreach ($days as $day) {
+                    $index++;
                     $dateStr = $day->toDateString();
                     $key = $user->id . '|' . $dateStr;
-                    $dayRecords = isset($allRecords[$key]) ? $allRecords[$key] : collect();
+                    $dayRecords = isset($allRecords[$key]) ? $allRecords[$key]->keyBy('type') : collect();
                     $isLeave = isset($leaveDates[$user->id][$dateStr]);
 
-                    if ($isLeave) {
-                        echo '<td class="center izin">I</td>';
-                    } elseif ($dayRecords->isEmpty()) {
-                        echo '<td class="center alfa">A</td>';
-                    } else {
-                        $hasField = $dayRecords->where('type', AttendanceRecord::TYPE_FIELD)->isNotEmpty();
-                        $hasEnd = $dayRecords->where('type', AttendanceRecord::TYPE_END)->isNotEmpty();
-                        if ($hasField) {
-                            echo '<td class="center dinas_luar">DL</td>';
-                            $hadirCount++;
-                        } elseif ($hasEnd) {
-                            echo '<td class="center hadir">H</td>';
-                            $hadirCount++;
-                        } elseif ($dayRecords->where('type', AttendanceRecord::TYPE_START)->isNotEmpty()) {
-                            echo '<td class="center" style="background:#fef9c3">BL</td>';
-                        } else {
-                            echo '<td class="center alfa">A</td>';
-                        }
-                    }
-                }
+                    $start = $dayRecords->get(AttendanceRecord::TYPE_START);
+                    $end = $dayRecords->get(AttendanceRecord::TYPE_END);
+                    $field = $dayRecords->get(AttendanceRecord::TYPE_FIELD);
+                    $latest = $field ?: ($end ?: $start);
 
-                echo '<td class="center"><strong>' . $hadirCount . '</strong></td>';
-                echo '</tr>';
+                    if ($isLeave) {
+                        $statusLabel = 'Izin / Sakit';
+                        $note = $leaveDates[$user->id][$dateStr] ?? '-';
+                    } elseif ($field) {
+                        $statusLabel = 'Dinas Luar';
+                    } elseif ($end) {
+                        $statusLabel = 'Hadir';
+                    } elseif ($start) {
+                        $statusLabel = 'Belum Lengkap';
+                    } else {
+                        $statusLabel = 'Alfa';
+                    }
+
+                    $note = $field?->note ?: ($latest?->note ?: '-');
+                    $location = $latest ? $this->locationText($latest) : '-';
+
+                    echo '<tr>';
+                    echo '<td class="center">' . $index . '</td>';
+                    echo '<td>' . e($user->name) . '</td>';
+                    echo '<td class="center" style="mso-number-format:\@">' . e($user->nip ?: '-') . '</td>';
+                    echo '<td class="center" style="mso-number-format:\@">' . e($user->nik ?: '-') . '</td>';
+                    echo '<td>' . e($user->jabatan ?: 'PJLP') . '</td>';
+                    echo '<td class="center">' . e($day->translatedFormat('l, d F Y')) . '</td>';
+                    echo '<td class="center">' . ($start ? e($start->recorded_at->format('H:i')) . ' WIB' : '-') . '</td>';
+                    echo '<td class="center">' . ($end ? e($end->recorded_at->format('H:i')) . ' WIB' : '-') . '</td>';
+                    echo '<td class="center">' . ($field ? e($field->recorded_at->format('H:i')) . ' WIB' : '-') . '</td>';
+                    echo '<td class="center">' . e($statusLabel) . '</td>';
+                    echo '<td class="wrap">' . e($location) . '</td>';
+                    echo '<td class="wrap">' . e($note) . '</td>';
+                    echo '</tr>';
+                }
             }
 
             echo '</table></body></html>';
         }, $fileName, ['Content-Type' => 'application/vnd.ms-excel; charset=UTF-8']);
     }
+
 
     private function monthLabel(Carbon $date): string
     {
