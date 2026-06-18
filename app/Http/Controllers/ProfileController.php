@@ -77,4 +77,16 @@ class ProfileController extends Controller
 
         return redirect()->route('profile.edit')->with('status', 'Tanda tangan berhasil dihapus.');
     }
+
+    public function deleteAvatar(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+            $user->forceFill(['avatar_path' => null])->save();
+        }
+
+        return redirect()->route('profile.edit')->with('status', 'Foto profil berhasil dihapus.');
+    }
 }

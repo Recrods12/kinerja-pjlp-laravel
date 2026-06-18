@@ -60,6 +60,10 @@
           <div class="signature-preview-box">
             <img src="{{ asset('storage/' . $user->avatar_path) }}" alt="Foto {{ $user->name }}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 999px;">
           </div>
+          <form method="post" action="{{ route('profile.avatar.delete') }}" style="margin-top:8px;" onsubmit="return confirm('Yakin ingin menghapus foto profil?')">
+            @csrf
+            <button class="danger-action" type="submit">Hapus Foto Profil</button>
+          </form>
         @else
           <p class="muted">Belum ada foto profil.</p>
         @endif
