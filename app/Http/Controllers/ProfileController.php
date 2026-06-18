@@ -65,4 +65,16 @@ class ProfileController extends Controller
 
         return redirect()->route('profile.edit')->with('status', 'Profil berhasil disimpan.');
     }
+
+    public function deleteSignature(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->signature_path) {
+            Storage::disk('public')->delete($user->signature_path);
+            $user->forceFill(['signature_path' => null])->save();
+        }
+
+        return redirect()->route('profile.edit')->with('status', 'Tanda tangan berhasil dihapus.');
+    }
 }

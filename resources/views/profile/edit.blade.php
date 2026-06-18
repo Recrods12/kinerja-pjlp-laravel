@@ -78,6 +78,11 @@
           <div class="signature-preview-box">
             <img src="{{ asset('storage/' . $user->signature_path) }}" alt="Tanda tangan {{ $user->name }}">
           </div>
+          <form method="post" action="{{ route('profile.signature.delete') }}" style="margin-top:8px;" onsubmit="return confirm('Yakin ingin menghapus tanda tangan?')">
+            @csrf
+            @method('delete')
+            <button class="danger-action" type="submit">Hapus Tanda Tangan</button>
+          </form>
         @else
           <p class="muted">Belum ada tanda tangan.</p>
         @endif
