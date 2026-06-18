@@ -409,11 +409,29 @@ img.brand-mark {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 8px 0 2px;
+  padding: 18px 22px;
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 16px;
+  backdrop-filter: blur(4px);
 }
 
 .page-heading h1 {
-  font-size: clamp(28px, 3vw, 38px);
+  font-size: clamp(24px, 3vw, 34px);
+  margin: 0;
+  color: var(--ink);
+}
+
+.page-heading .eyebrow {
+  margin: 0 0 4px;
+  color: var(--green);
+  font-size: 11px;
+}
+
+.page-heading .muted {
+  margin: 4px 0 0;
+  font-size: 13px;
 }
 
 .page-actions {
