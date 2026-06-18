@@ -96,6 +96,130 @@ class AdminAttendanceController extends Controller
         }, $fileName, ['Content-Type' => 'application/vnd.ms-excel; charset=UTF-8']);
     }
 
+    public function exportMonthly(Request $request)
+    {
+        $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
+        $yearNumber = (int) $request->query('year', now()->year);
+        $month = Carbon::create($yearNumber, $monthNumber, 1)->startOfMonth();
+        $monthEnd = $month->copy()->endOfMonth();
+
+        $users = User::query()
+            ->where('role', 'pjlp')
+            ->orderBy('name')
+            ->get();
+
+        $allRecords = AttendanceRecord::query()
+            ->with('user')
+            ->whereDate('work_date', '>=', $month)
+            ->whereDate('work_date', '<=', $monthEnd)
+            ->get()
+            ->groupBy(fn ($r) => $r->user_id . '|' . $r->work_date->toDateString());
+
+        $allLeaves = LeaveRequest::query()
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereDate('start_date', '<=', $monthEnd)
+            ->whereDate('end_date', '>=', $month)
+            ->get();
+
+        $leaveDates = [];
+        foreach ($allLeaves as $leave) {
+            $period = \Carbon\CarbonPeriod::create($leave->start_date, $leave->end_date);
+            foreach ($period as $d) {
+                $leaveDates[$leave->user_id][$d->toDateString()] = true;
+            }
+        }
+
+        $days = [];
+        for ($d = 1; $d <= $month->daysInMonth; $d++) {
+            $date = Carbon::create($yearNumber, $monthNumber, $d);
+            if (!$date->isWeekend()) {
+                $days[] = $date;
+            }
+        }
+
+        $statusLabels = $this->statusLabels();
+        $monthLabel = $this->monthLabel($month);
+        $fileName = 'rekap-absensi-bulanan-' . $month->format('Y-m') . '.xls';
+
+        return response()->streamDownload(function () use ($users, $days, $allRecords, $leaveDates, $statusLabels, $monthLabel) {
+            echo '<!doctype html><html><head><meta charset="utf-8">';
+            echo '<style>
+                table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 10px; }
+                th { background: #dff6e8; font-weight: bold; text-align: center; vertical-align: middle; }
+                th, td { border: 1px solid #333; padding: 3px 4px; }
+                .center { text-align: center; }
+                .title { font-size: 14px; font-weight: bold; border: 0; padding: 6px 0; }
+                .hadir { background: #dff6e8; }
+                .dinas_luar { background: #dbeafe; }
+                .izin { background: #fef3c7; }
+                .alfa { background: #ffe7e3; }
+            </style></head><body>';
+            echo '<table>';
+            echo '<tr><td class="title" colspan="' . (count($days) + 5) . '">Rekap Absensi Bulanan PJLP ' . e($monthLabel) . '</td></tr>';
+            echo '<tr>';
+            echo '<th rowspan="2">No</th>';
+            echo '<th rowspan="2">Nama Pegawai</th>';
+            echo '<th rowspan="2">NIP PJLP</th>';
+            echo '<th rowspan="2">Jabatan</th>';
+            foreach ($days as $day) {
+                echo '<th>' . e($day->translatedFormat('D')) . '</th>';
+            }
+            echo '<th rowspan="2">Hadir</th>';
+            echo '</tr><tr>';
+            foreach ($days as $day) {
+                echo '<th>' . $day->day . '</th>';
+            }
+            echo '</tr>';
+
+            foreach ($users as $index => $user) {
+                $hadirCount = 0;
+                echo '<tr>';
+                echo '<td class="center">' . e($index + 1) . '</td>';
+                echo '<td>' . e($user->name) . '</td>';
+                echo '<td class="center" style="mso-number-format:\\@">' . e($user->nip ?: '-') . '</td>';
+                echo '<td>' . e($user->jabatan ?: 'PJLP') . '</td>';
+
+                foreach ($days as $day) {
+                    $dateStr = $day->toDateString();
+                    $key = $user->id . '|' . $dateStr;
+                    $dayRecords = isset($allRecords[$key]) ? $allRecords[$key] : collect();
+                    $isLeave = isset($leaveDates[$user->id][$dateStr]);
+
+                    if ($isLeave) {
+                        echo '<td class="center izin">I</td>';
+                    } elseif ($dayRecords->isEmpty()) {
+                        echo '<td class="center alfa">A</td>';
+                    } else {
+                        $hasField = $dayRecords->where('type', AttendanceRecord::TYPE_FIELD)->isNotEmpty();
+                        $hasEnd = $dayRecords->where('type', AttendanceRecord::TYPE_END)->isNotEmpty();
+                        if ($hasField) {
+                            echo '<td class="center dinas_luar">DL</td>';
+                            $hadirCount++;
+                        } elseif ($hasEnd) {
+                            echo '<td class="center hadir">H</td>';
+                            $hadirCount++;
+                        } elseif ($dayRecords->where('type', AttendanceRecord::TYPE_START)->isNotEmpty()) {
+                            echo '<td class="center" style="background:#fef9c3">BL</td>';
+                        } else {
+                            echo '<td class="center alfa">A</td>';
+                        }
+                    }
+                }
+
+                echo '<td class="center"><strong>' . $hadirCount . '</strong></td>';
+                echo '</tr>';
+            }
+
+            echo '</table></body></html>';
+        }, $fileName, ['Content-Type' => 'application/vnd.ms-excel; charset=UTF-8']);
+    }
+
+    private function monthLabel(Carbon $date): string
+    {
+        $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+        return $monthNames[$date->month] . ' ' . $date->year;
+    }
+
     public function show(AttendanceRecord $attendanceRecord)
     {
         $records = AttendanceRecord::query()

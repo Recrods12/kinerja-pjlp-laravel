@@ -50,6 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/absensi', [AdminAttendanceController::class, 'index'])->name('admin.attendance.index');
         Route::get('/admin/absensi/export-excel', [AdminAttendanceController::class, 'exportExcel'])->name('admin.attendance.exportExcel');
+        Route::get('/admin/absensi/export-bulanan', [AdminAttendanceController::class, 'exportMonthly'])->name('admin.attendance.exportMonthly');
         Route::get('/admin/absensi/{attendanceRecord}/edit', [AdminAttendanceController::class, 'edit'])->name('admin.attendance.edit');
         Route::put('/admin/absensi/{attendanceRecord}', [AdminAttendanceController::class, 'update'])->name('admin.attendance.update');
         Route::get('/admin/absensi/{attendanceRecord}', [AdminAttendanceController::class, 'show'])->name('admin.attendance.show');
