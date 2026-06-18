@@ -202,32 +202,34 @@
         @include('reports.pdf-table', ['items' => $page['leftEntries']->take(15)->values(), 'side' => 'left'])
         @include('reports.pdf-table', ['items' => $page['rightEntries']->take(15)->values(), 'side' => 'right'])
 
-        <div class="pdf-signature left">
-          <div class="pdf-signature-role">
-            Mengetahui,<br>
-            Kasubbag Umum Sekretariat<br>
-            Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
-            Provinsi DKI Jakarta
+        @if ($loop->last)
+          <div class="pdf-signature left">
+            <div class="pdf-signature-role">
+              Mengetahui,<br>
+              Kasubbag Umum Sekretariat<br>
+              Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
+              Provinsi DKI Jakarta
+            </div>
+            @if ($approverSignature)
+              <img class="pdf-signature-image" src="{{ $approverSignature }}" alt="Tanda tangan {{ $approverName }}">
+            @endif
+            <div class="pdf-signature-name">{{ $approverName }}</div>
+            <div class="pdf-signature-id">NIP. {{ $approverNip }}</div>
           </div>
-          @if ($approverSignature)
-            <img class="pdf-signature-image" src="{{ $approverSignature }}" alt="Tanda tangan {{ $approverName }}">
-          @endif
-          <div class="pdf-signature-name">{{ $approverName }}</div>
-          <div class="pdf-signature-id">NIP. {{ $approverNip }}</div>
-        </div>
 
-        <div class="pdf-signature right">
-          <div class="pdf-signature-role">
-            PJLP<br>
-            Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
-            Provinsi DKI Jakarta
+          <div class="pdf-signature right">
+            <div class="pdf-signature-role">
+              PJLP<br>
+              Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
+              Provinsi DKI Jakarta
+            </div>
+            @if ($targetSignature)
+              <img class="pdf-signature-image" src="{{ $targetSignature }}" alt="Tanda tangan {{ $targetName }}">
+            @endif
+            <div class="pdf-signature-name">{{ $targetName }}</div>
+            <div class="pdf-signature-id">ID PJLP {{ $target->nip ?: '........................' }}</div>
           </div>
-          @if ($targetSignature)
-            <img class="pdf-signature-image" src="{{ $targetSignature }}" alt="Tanda tangan {{ $targetName }}">
-          @endif
-          <div class="pdf-signature-name">{{ $targetName }}</div>
-          <div class="pdf-signature-id">ID PJLP {{ $target->nip ?: '........................' }}</div>
-        </div>
+        @endif
       </section>
     @endforeach
   </body>

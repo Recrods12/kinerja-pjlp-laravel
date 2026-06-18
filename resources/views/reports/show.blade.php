@@ -36,6 +36,7 @@
         'rightDate' => $page['rightDate'],
         'leftEntries' => $page['leftEntries'],
         'rightEntries' => $page['rightEntries'],
+        'isLastPage' => $loop->last,
       ])
     @endforeach
   </section>
