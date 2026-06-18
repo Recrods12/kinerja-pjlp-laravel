@@ -37,7 +37,7 @@
     <tr>
       <th class="no-col" width="7%" style="width: 7%;">NO</th>
       <th class="time-col" width="14%" style="width: 14%;">JAM KERJA</th>
-      <th class="task-col" width="61%" style="width: 61%;">URAIAN TUGAS</th>
+      <th class="task-col" width="61%" style="width: 61%; text-align:center;">URAIAN TUGAS</th>
       <th class="note-col" width="18%" style="width: 18%;">KETERANGAN</th>
     </tr>
   </thead>
