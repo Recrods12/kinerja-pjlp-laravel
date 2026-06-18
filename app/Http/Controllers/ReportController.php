@@ -49,6 +49,8 @@ class ReportController extends Controller
 
     public function downloadZip(Request $request)
     {
+        set_time_limit(300);
+
         $period = $request->query('period', 'monthly');
         $yearNumber = (int) $request->query('year', now()->year);
         $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
