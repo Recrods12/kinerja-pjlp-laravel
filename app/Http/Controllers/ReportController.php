@@ -51,9 +51,11 @@ class ReportController extends Controller
     {
         set_time_limit(300);
 
-        $period = $request->query('period', 'monthly');
-        $yearNumber = (int) $request->query('year', now()->year);
-        $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
+        $month = Carbon::create(
+            (int) $request->query('year', now()->year),
+            (int) $request->query('month', now()->month),
+            1
+        );
         $jobRoles = ['Driver', 'Kebersihan', 'Keamanan', 'Mekanikal Enginer', 'Pelayanan Umum'];
         $selectedRole = $request->query('jabatan');
         $search = trim((string) $request->query('search', ''));
@@ -84,65 +86,28 @@ class ReportController extends Controller
             mkdir($directory, 0775, true);
         }
 
-        if ($period === 'yearly') {
-            $zipName = 'laporan-kinerja-tahunan-' . $yearNumber . '-' . now()->format('YmdHis') . '.zip';
-        } else {
-            $month = Carbon::create($yearNumber, $monthNumber, 1);
-            $zipName = 'laporan-kinerja-' . Str::slug($month->translatedFormat('F-Y')) . '-' . now()->format('YmdHis') . '.zip';
-        }
-
+        $zipName = 'laporan-kinerja-' . Str::slug($month->translatedFormat('F-Y')) . '-' . now()->format('YmdHis') . '.zip';
         $zipPath = $directory . DIRECTORY_SEPARATOR . $zipName;
         $zip = new ZipArchive();
         $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 
-        if ($period === 'yearly') {
-            foreach ($users as $user) {
-                $allPages = [];
+        foreach ($users as $user) {
+            $reportPages = $this->reportPagesForMonth($user, $month);
 
-                for ($m = 1; $m <= 12; $m++) {
-                    $month = Carbon::create($yearNumber, $m, 1);
-                    $reportPages = $this->reportPagesForMonth($user, $month);
-
-                    if (! empty($reportPages)) {
-                        $allPages = array_merge($allPages, $reportPages);
-                    }
-                }
-
-                if (empty($allPages)) {
-                    continue;
-                }
-
-                $pdf = Pdf::loadView('reports.pdf', [
-                    'target' => $user,
-                    'approver' => $this->approverForReport(Auth::user()),
-                    'reportPages' => $allPages,
-                ])->setPaper('a4', 'landscape');
-
-                $userName = $user->name ?: $user->username;
-                $fileName = $userName . ' - kinerja Tahunan ' . $yearNumber . '.pdf';
-                $zip->addFromString($fileName, $pdf->output());
+            if (empty($reportPages)) {
+                continue;
             }
-        } else {
-            $month = Carbon::create($yearNumber, $monthNumber, 1);
 
-            foreach ($users as $user) {
-                $reportPages = $this->reportPagesForMonth($user, $month);
+            $pdf = Pdf::loadView('reports.pdf', [
+                'target' => $user,
+                'approver' => $this->approverForReport(Auth::user()),
+                'reportPages' => $reportPages,
+            ])->setPaper('a4', 'landscape');
 
-                if (empty($reportPages)) {
-                    continue;
-                }
-
-                $pdf = Pdf::loadView('reports.pdf', [
-                    'target' => $user,
-                    'approver' => $this->approverForReport(Auth::user()),
-                    'reportPages' => $reportPages,
-                ])->setPaper('a4', 'landscape');
-
-                $userName = $user->name ?: $user->username;
-                $monthLabel = $month->translatedFormat('F');
-                $fileName = $userName . ' - kinerja ' . $monthLabel . '.pdf';
-                $zip->addFromString($fileName, $pdf->output());
-            }
+            $userName = $user->name ?: $user->username;
+            $monthLabel = $month->translatedFormat('F');
+            $fileName = $userName . ' - kinerja ' . $monthLabel . '.pdf';
+            $zip->addFromString($fileName, $pdf->output());
         }
 
         $zip->close();

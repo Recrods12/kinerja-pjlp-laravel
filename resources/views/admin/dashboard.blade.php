@@ -67,8 +67,7 @@
       <p class="muted">Pantau pengisian kinerja PJLP, pengajuan cuti, dan rekap bulanan dalam satu layar.</p>
     </div>
     <div class="page-actions">
-      <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['period' => 'monthly', 'month' => $month->month, 'year' => $month->year])) }}">Download Bulanan</a>
-      <a class="ghost-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['period' => 'yearly', 'month' => $month->month, 'year' => $month->year])) }}">Download Tahunan</a>
+      <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download ZIP PDF</a>
     </div>
   </section>
 
@@ -288,8 +287,7 @@
           <p class="muted">Pantau pengisian kinerja PJLP pada bulan {{ $monthLabel }}.</p>
         </div>
         <div class="admin-toolbar">
-          <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['period' => 'monthly', 'month' => $month->month, 'year' => $month->year])) }}">Download Bulanan</a>
-          <a class="ghost-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['period' => 'yearly', 'month' => $month->month, 'year' => $month->year])) }}">Download Tahunan</a>
+          <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download ZIP PDF</a>
           <a class="ghost-action" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Export Excel</a>
           <a class="ghost-action" href="{{ route('admin.holidays.index') }}">Kelola Libur</a>
           <div class="month-nav">
