@@ -97,25 +97,30 @@ class ReportController extends Controller
 
         if ($period === 'yearly') {
             foreach ($users as $user) {
+                $allPages = [];
+
                 for ($m = 1; $m <= 12; $m++) {
                     $month = Carbon::create($yearNumber, $m, 1);
                     $reportPages = $this->reportPagesForMonth($user, $month);
 
-                    if (empty($reportPages)) {
-                        continue;
+                    if (! empty($reportPages)) {
+                        $allPages = array_merge($allPages, $reportPages);
                     }
-
-                    $pdf = Pdf::loadView('reports.pdf', [
-                        'target' => $user,
-                        'approver' => $this->approverForReport(Auth::user()),
-                        'reportPages' => $reportPages,
-                    ])->setPaper('a4', 'landscape');
-
-                    $userName = $user->name ?: $user->username;
-                    $monthLabel = $month->translatedFormat('F');
-                    $fileName = $userName . ' - kinerja ' . $monthLabel . '.pdf';
-                    $zip->addFromString($fileName, $pdf->output());
                 }
+
+                if (empty($allPages)) {
+                    continue;
+                }
+
+                $pdf = Pdf::loadView('reports.pdf', [
+                    'target' => $user,
+                    'approver' => $this->approverForReport(Auth::user()),
+                    'reportPages' => $allPages,
+                ])->setPaper('a4', 'landscape');
+
+                $userName = $user->name ?: $user->username;
+                $fileName = $userName . ' - kinerja Tahunan ' . $yearNumber . '.pdf';
+                $zip->addFromString($fileName, $pdf->output());
             }
         } else {
             $month = Carbon::create($yearNumber, $monthNumber, 1);
