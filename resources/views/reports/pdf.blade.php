@@ -1,210 +1,168 @@
 <!doctype html>
 <html lang="id">
-  <head>
-    <meta charset="utf-8">
-    <style>
-      @page { size: A4 landscape; margin: 0; }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        color: #111;
-        font-family: Arial, Helvetica, sans-serif;
-      }
-      .pdf-page {
-        position: relative;
-        width: 297mm;
-        height: 210mm;
-        page-break-after: always;
-        overflow: hidden;
-        background: #fff;
-      }
-      .pdf-page:last-child { page-break-after: auto; }
-      .pdf-title {
-        position: absolute;
-        top: 5mm;
-        left: 10mm;
-        right: 10mm;
-        text-align: center;
-        font-weight: 700;
-        font-size: 12px;
-        line-height: 1.25;
-      }
-      .pdf-meta {
-        position: absolute;
-        top: 22mm;
-        left: 11mm;
-        right: 11mm;
-        font-size: 10px;
-      }
-      .pdf-meta-left,
-      .pdf-meta-right {
-        position: absolute;
-        top: 0;
-        width: 132mm;
-      }
-      .pdf-meta-left { left: 0; }
-      .pdf-meta-right { left: 143mm; }
-      .pdf-meta-table {
-        border-collapse: collapse;
-        width: 132mm;
-      }
-      .pdf-meta-table tr {
-        line-height: 4.7mm;
-      }
-      .pdf-meta-lbl {
-        width: 22mm;
-        vertical-align: top;
-        padding: 0;
-        font-weight: normal;
-      }
-      .pdf-meta-colon {
-        width: 5mm;
-        vertical-align: top;
-        padding: 0;
-      }
-      .pdf-meta-val {
-        vertical-align: top;
-        padding: 0;
-        white-space: nowrap;
-      }
-      .pdf-table {
-        position: absolute;
-        top: 37mm;
-        width: 132mm;
-        border-collapse: collapse;
-        table-layout: fixed;
-        font-size: 8px;
-      }
-      .pdf-table.left { left: 11mm; }
-      .pdf-table.right { left: 154mm; }
-      .pdf-table th,
-      .pdf-table td {
-        border: 1px solid #111;
-        height: 6.35mm;
-        padding: .5mm 1.1mm;
-        line-height: 1.05;
-        vertical-align: middle;
-        overflow: hidden;
-      }
-      .pdf-table th {
-        height: 5.3mm;
-        text-align: center;
-        font-size: 7px;
-        font-weight: 700;
-      }
-      .pdf-table .no-col { text-align: center; }
-      .pdf-table .time-col { text-align: center; }
-      .pdf-table .note-col { text-align: center; }
-      .pdf-table .task-col { text-align: left; }
-      .pdf-task-text {
-        display: block;
-        width: 100%;
-        max-height: 1.15em;
-        line-height: 1.05;
-        white-space: nowrap;
-        overflow: hidden;
-        font-size: 12px;
-      }
-      .pdf-signature {
-        position: absolute;
-        top: 162mm;
-        width: 132mm;
-        height: 34mm;
-        text-align: center;
-        font-size: 11px;
-        line-height: 1.1;
-      }
-      .pdf-signature.left { left: 11mm; }
-      .pdf-signature.right { left: 154mm; }
-      .pdf-signature-role {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-      }
-      .pdf-signature-name {
-        position: absolute;
-        top: 25mm;
-        left: 0;
-        right: 0;
-        margin: 0;
-        font-size: 11px;
-        font-weight: 700;
-        text-decoration: underline;
-      }
-      .pdf-signature-id {
-        position: absolute;
-        top: 29mm;
-        left: 0;
-        right: 0;
-      }
-      .pdf-signature-image {
-        display: block;
-        width: 34mm;
-        height: 13mm;
-        object-fit: contain;
-        position: absolute;
-        top: 12mm;
-        left: 49mm;
-      }
-    </style>
-  </head>
-  <body>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: #111;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .pdf-page {
+    width: 297mm;
+    height: 210mm;
+    page-break-after: always;
+    overflow: hidden;
+    background: #fff;
+    padding: 10mm 12mm 8mm;
+  }
+  .pdf-page:last-child { page-break-after: auto; }
+  .pdf-title {
+    text-align: center;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 1.35;
+    margin-bottom: 5mm;
+  }
+  .pdf-meta {
+    display: flex;
+    gap: 12mm;
+    font-size: 11px;
+    margin-bottom: 3mm;
+  }
+  .pdf-meta-left, .pdf-meta-right {
+    flex: 1;
+  }
+  .pdf-meta-line {
+    display: flex;
+    min-height: 5mm;
+  }
+  .pdf-meta-lbl { width: 26mm; }
+  .pdf-meta-colon { width: 4mm; }
+  .pdf-meta-val { flex: 1; }
+  .pdf-columns {
+    display: flex;
+    gap: 10mm;
+  }
+  .pdf-column {
+    flex: 1;
+    min-width: 0;
+  }
+  .pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 8px;
+  }
+  .pdf-table th,
+  .pdf-table td {
+    border: 1px solid #1d2623;
+    height: 7.2mm;
+    padding: 0.5mm 1.2mm;
+    text-align: center;
+    vertical-align: middle;
+    overflow: hidden;
+  }
+  .pdf-table th {
+    height: 5mm;
+    font-size: 7px;
+    font-weight: 700;
+  }
+  .pdf-table .no-col { width: 9mm; }
+  .pdf-table .time-col { width: 19mm; }
+  .pdf-table .note-col { width: 24mm; }
+  .pdf-table td:nth-child(3) { text-align: left; }
+  .pdf-task-text {
+    display: block;
+    max-height: 1.15em;
+    overflow: hidden;
+    line-height: 1.15;
+    white-space: nowrap;
+    font-size: 9px;
+  }
+  .pdf-signature-row {
+    display: flex;
+    gap: 10mm;
+    margin-top: 6mm;
+    text-align: center;
+    font-size: 10px;
+  }
+  .pdf-signature-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 28mm;
+  }
+  .pdf-signature-name {
+    font-weight: 700;
+    text-decoration: underline;
+    margin-top: 18mm;
+  }
+  .pdf-signature-image {
+    display: block;
+    width: 40mm;
+    height: 13mm;
+    object-fit: contain;
+    margin: 4mm auto -16mm;
+  }
+</style>
+</head>
+<body>
+  @php
+    $imageData = function (?string $path): ?string {
+        if (! $path) { return null; }
+        $fullPath = storage_path('app/public/' . $path);
+        if (! is_file($fullPath)) { return null; }
+        $mime = mime_content_type($fullPath) ?: 'image/png';
+        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
+    };
+    $approverName = $approver?->name ?: 'Andhika Ilviano Rizqullah';
+    $approverNip = $approver?->nip ?: '199605192019031003';
+    $approverSignature = $imageData($approver?->signature_path);
+    $targetSignature = $imageData($target->signature_path);
+  @endphp
+  @foreach ($reportPages as $page)
     @php
-      $imageData = function (?string $path): ?string {
-          if (! $path) {
-              return null;
-          }
-
-          $fullPath = storage_path('app/public/' . $path);
-          if (! is_file($fullPath)) {
-              return null;
-          }
-
-          $mime = mime_content_type($fullPath) ?: 'image/png';
-          return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
-      };
-      $approverName = $approver?->name ?: 'Andhika Ilviano Rizqullah';
-      $approverNip = $approver?->nip ?: '199605192019031003';
-      $approverSignature = $imageData($approver?->signature_path);
-      $targetSignature = $imageData($target->signature_path);
+      $leftDate = $page['leftDate'];
+      $rightDate = $page['rightDate'];
+      $targetName = $target->name;
     @endphp
-    @foreach ($reportPages as $page)
-      @php
-        $leftDate = $page['leftDate'];
-        $rightDate = $page['rightDate'];
-        $targetName = $target->name;
-      @endphp
-      <section class="pdf-page">
-        <div class="pdf-title">
-          LAPORAN KINERJA HARIAN PJLP<br>
-          DINAS TENAGA KERJA, TRANSMIGRASI DAN ENERGI PROVINSI DKI JAKARTA<br>
-          TAHUN {{ $leftDate->year }}
+    <section class="pdf-page">
+      <div class="pdf-title">
+        LAPORAN KINERJA HARIAN PJLP<br>
+        DINAS TENAGA KERJA, TRANSMIGRASI DAN ENERGI PROVINSI DKI JAKARTA<br>
+        TAHUN {{ $leftDate->year }}
+      </div>
+
+      <div class="pdf-meta">
+        <div class="pdf-meta-left">
+          <div class="pdf-meta-line"><span class="pdf-meta-lbl">NAMA</span><span class="pdf-meta-colon">:</span><span class="pdf-meta-val"><strong>{{ $targetName }}</strong></span></div>
+          <div class="pdf-meta-line"><span class="pdf-meta-lbl">HARI</span><span class="pdf-meta-colon">:</span><span class="pdf-meta-val">{{ $leftDate->translatedFormat('l') }}</span></div>
+          <div class="pdf-meta-line"><span class="pdf-meta-lbl">TANGGAL</span><span class="pdf-meta-colon">:</span><span class="pdf-meta-val">{{ $leftDate->translatedFormat('d F Y') }}</span></div>
         </div>
-
-        <div class="pdf-meta">
-          <div class="pdf-meta-left">
-            <table class="pdf-meta-table">
-              <tr><td class="pdf-meta-lbl">NAMA</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val"><strong>{{ $targetName }}</strong></td></tr>
-              <tr><td class="pdf-meta-lbl">HARI</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $leftDate->translatedFormat('l') }}</td></tr>
-              <tr><td class="pdf-meta-lbl">TANGGAL</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $leftDate->translatedFormat('d F Y') }}</td></tr>
-            </table>
-          </div>
-          <div class="pdf-meta-right">
-            <table class="pdf-meta-table">
-              <tr><td class="pdf-meta-lbl">&nbsp;</td><td class="pdf-meta-colon">&nbsp;</td><td class="pdf-meta-val">&nbsp;</td></tr>
-              <tr><td class="pdf-meta-lbl">HARI</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('l') : '' }}</td></tr>
-              <tr><td class="pdf-meta-lbl">TANGGAL</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('d F Y') : '' }}</td></tr>
-            </table>
-          </div>
+        <div class="pdf-meta-right">
+          <div class="pdf-meta-line"><span class="pdf-meta-lbl">&nbsp;</span><span class="pdf-meta-colon">&nbsp;</span><span class="pdf-meta-val">&nbsp;</span></div>
+          <div class="pdf-meta-line"><span class="pdf-meta-lbl">HARI</span><span class="pdf-meta-colon">:</span><span class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('l') : '' }}</span></div>
+          <div class="pdf-meta-line"><span class="pdf-meta-lbl">TANGGAL</span><span class="pdf-meta-colon">:</span><span class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('d F Y') : '' }}</span></div>
         </div>
+      </div>
 
-        @include('reports.pdf-table', ['items' => $page['leftEntries']->take(15)->values(), 'side' => 'left'])
-        @include('reports.pdf-table', ['items' => $page['rightEntries']->take(15)->values(), 'side' => 'right'])
+      <div class="pdf-columns">
+        <div class="pdf-column">
+          @include('reports.pdf-table', ['items' => $page['leftEntries']->take(15)->values()])
+        </div>
+        <div class="pdf-column">
+          @include('reports.pdf-table', ['items' => $page['rightEntries']->take(15)->values()])
+        </div>
+      </div>
 
-        @if ($loop->last)
-          <div class="pdf-signature left">
-            <div class="pdf-signature-role">
+      @if ($loop->last)
+        <div class="pdf-signature-row">
+          <div class="pdf-signature-block">
+            <div>
               Mengetahui,<br>
               Kasubbag Umum Sekretariat<br>
               Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
@@ -214,11 +172,10 @@
               <img class="pdf-signature-image" src="{{ $approverSignature }}" alt="Tanda tangan {{ $approverName }}">
             @endif
             <div class="pdf-signature-name">{{ $approverName }}</div>
-            <div class="pdf-signature-id">NIP. {{ $approverNip }}</div>
+            <div>NIP. {{ $approverNip }}</div>
           </div>
-
-          <div class="pdf-signature right">
-            <div class="pdf-signature-role">
+          <div class="pdf-signature-block">
+            <div>
               PJLP<br>
               Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
               Provinsi DKI Jakarta
@@ -227,10 +184,11 @@
               <img class="pdf-signature-image" src="{{ $targetSignature }}" alt="Tanda tangan {{ $targetName }}">
             @endif
             <div class="pdf-signature-name">{{ $targetName }}</div>
-            <div class="pdf-signature-id">ID PJLP {{ $target->nip ?: '........................' }}</div>
+            <div>ID PJLP {{ $target->nip ?: '........................' }}</div>
           </div>
-        @endif
-      </section>
-    @endforeach
-  </body>
+        </div>
+      @endif
+    </section>
+  @endforeach
+</body>
 </html>
