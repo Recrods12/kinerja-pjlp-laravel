@@ -15,8 +15,12 @@
       <p class="muted">Lihat jadwal cuti PJLP yang sudah disetujui dalam tampilan kalender bulanan.</p>
     </div>
     <div class="page-actions">
-      <a class="ghost-action" href="{{ route('admin.leave.index') }}">Pengajuan Cuti</a>
-      <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
+      <div class="btn-group" style="display:flex;gap:6px;flex-wrap:wrap">
+        <a class="ghost-action" href="{{ route('admin.leave.exportCalendar', ['period' => 'monthly', 'month' => $month->month, 'year' => $month->year]) }}">Download Bulanan</a>
+        <a class="ghost-action" href="{{ route('admin.leave.exportCalendar', ['period' => 'yearly', 'month' => $month->month, 'year' => $month->year]) }}">Download Tahunan</a>
+        <a class="ghost-action" href="{{ route('admin.leave.index') }}">Pengajuan Cuti</a>
+        <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
+      </div>
     </div>
   </div>
 

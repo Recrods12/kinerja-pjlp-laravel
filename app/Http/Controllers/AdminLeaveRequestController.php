@@ -237,6 +237,37 @@ class AdminLeaveRequestController extends Controller
             ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
     }
 
+    public function exportCalendar(Request $request): Response
+    {
+        $period = $request->query('period', 'monthly');
+        $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
+        $yearNumber = max(2020, min(2100, (int) $request->query('year', now()->year)));
+
+        if ($period === 'yearly') {
+            $start = Carbon::create($yearNumber, 1, 1)->startOfYear();
+            $end = $start->copy()->endOfYear();
+            $filename = 'cuti-tahunan-'.$yearNumber.'.xls';
+        } else {
+            $start = Carbon::create($yearNumber, $monthNumber, 1)->startOfMonth();
+            $end = $start->copy()->endOfMonth();
+            $filename = 'cuti-bulanan-'.$start->translatedFormat('F-Y').'.xls';
+        }
+
+        $leaveRequests = LeaveRequest::query()
+            ->with('user', 'approver')
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereDate('start_date', '<=', $end)
+            ->whereDate('end_date', '>=', $start)
+            ->orderBy('start_date')
+            ->orderBy('end_date')
+            ->get();
+
+        return response()
+            ->view('admin.leave.excel', compact('leaveRequests'))
+            ->header('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
+    }
+
     private function filteredQuery(?string $status, string $search)
     {
         return LeaveRequest::query()
