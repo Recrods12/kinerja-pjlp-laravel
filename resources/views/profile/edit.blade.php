@@ -80,7 +80,6 @@
           </div>
           <form method="post" action="{{ route('profile.signature.delete') }}" style="margin-top:8px;" onsubmit="return confirm('Yakin ingin menghapus tanda tangan?')">
             @csrf
-            @method('delete')
             <button class="danger-action" type="submit">Hapus Tanda Tangan</button>
           </form>
         @else
