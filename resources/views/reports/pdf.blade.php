@@ -95,7 +95,7 @@
       .pdf-table .no-col { text-align: center; }
       .pdf-table .time-col { text-align: center; }
       .pdf-table .note-col { text-align: center; }
-      .pdf-table .task-col { text-align: left; }
+      .pdf-table .task-col { text-align: center; }
       .pdf-task-text {
         display: block;
         width: 100%;
