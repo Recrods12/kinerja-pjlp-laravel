@@ -20,7 +20,8 @@ class DashboardController extends Controller
             return $this->admin($request);
         }
 
-        $selectedDate = $this->nextWorkdayForUser($user, Carbon::parse($request->query('date', now()->toDateString())));
+        $now = now()->startOfDay();
+        $selectedDate = $this->nextWorkdayForUser($user, Carbon::parse($request->query('date', $now->toDateString())));
         $month = Carbon::create(
             (int) $request->query('year', $selectedDate->year),
             (int) $request->query('month', $selectedDate->month),
@@ -32,6 +33,8 @@ class DashboardController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $canEdit = $month->isSameMonth($now);
+
         return view('pjlp.dashboard', [
             'user' => $user,
             'selectedDate' => $selectedDate,
@@ -41,6 +44,7 @@ class DashboardController extends Controller
             'holidayDates' => $this->holidayDatesForMonth($month),
             'workDates' => $this->workDatesForMonth($user, $month),
             'stats' => $this->monthStats($user, $month),
+            'canEdit' => $canEdit,
             'leaveSummary' => [
                 'pending' => $user->leaveRequests()->where('status', LeaveRequest::STATUS_PENDING)->count(),
                 'approved' => $user->leaveRequests()->where('status', LeaveRequest::STATUS_APPROVED)->count(),
@@ -224,5 +228,4 @@ class DashboardController extends Controller
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
             ->all();
     }
-
 }

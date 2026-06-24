@@ -24,6 +24,18 @@ class PerformanceEntryController extends Controller
         $user = Auth::user();
         $date = Carbon::parse($data['work_date'])->toDateString();
         $workDate = Carbon::parse($date);
+        $now = now()->startOfDay();
+
+        // Hanya bulan berjalan yang boleh diisi
+        if (! $workDate->isSameMonth($now)) {
+            return back()->withErrors(['work_date' => 'Kinerja hanya bisa diisi untuk bulan berjalan.']);
+        }
+
+        // Tidak boleh mengisi tanggal yang belum tiba
+        if ($workDate->greaterThan($now)) {
+            return back()->withErrors(['work_date' => 'Kinerja tidak bisa diisi untuk tanggal yang belum tiba.']);
+        }
+
         $holidayDates = Holiday::query()
             ->whereBetween('holiday_date', [$workDate->copy()->startOfMonth(), $workDate->copy()->endOfMonth()])
             ->pluck('holiday_date')

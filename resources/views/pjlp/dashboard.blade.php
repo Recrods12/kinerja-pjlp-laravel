@@ -97,10 +97,15 @@
       <div class="panel-header">
         <div>
           <h2>Catatan {{ $selectedDateLabel }}</h2>
-          <p class="muted">Isi uraian tugas harian, lalu simpan. Baris kosong tidak akan disimpan.</p>
+          @if ($canEdit)
+            <p class="muted">Isi uraian tugas harian, lalu simpan. Baris kosong tidak akan disimpan.</p>
+          @else
+            <p class="muted">Hanya dapat melihat — pengisian kinerja hanya untuk bulan berjalan.</p>
+          @endif
         </div>
       </div>
 
+      @if ($canEdit)
       <form method="post" action="{{ route('entries.store') }}" id="entry-form">
         @csrf
         <input type="hidden" name="work_date" value="{{ $selectedDate->toDateString() }}">
@@ -129,6 +134,22 @@
           <a class="ghost-action" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}">Lihat Laporan</a>
         </div>
       </form>
+      @else
+        <div class="task-list">
+          @forelse ($rows as $row)
+            <div class="task-row" style="opacity:0.7; pointer-events:none;">
+              <label><span>Jam Kerja</span><input value="{{ $row->work_time }}" disabled></label>
+              <label><span>Uraian Tugas</span><textarea disabled>{{ $row->task }}</textarea></label>
+              <label><span>Keterangan</span><input value="{{ $row->note }}" disabled></label>
+            </div>
+          @empty
+            <p class="muted" style="padding:16px 0;">Tidak ada catatan kinerja untuk tanggal ini.</p>
+          @endforelse
+        </div>
+        <div class="actions-row">
+          <a class="ghost-action" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}">Lihat Laporan</a>
+        </div>
+      @endif
     </section>
   </section>
 
