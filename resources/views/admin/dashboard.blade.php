@@ -400,6 +400,7 @@
       </div>
       <div class="legend">
         <span><i class="dot green"></i>Sudah diisi</span>
+        <span><i class="dot blue"></i>Cuti</span>
         <span><i class="dot red"></i>Belum diisi</span>
         <span><i class="dot gray"></i>Libur / belum berjalan</span>
       </div>
