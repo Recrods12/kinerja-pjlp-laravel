@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Holiday;
+use App\Models\LeaveRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -117,10 +118,34 @@ class ReportController extends Controller
 
     private function entriesForDate(User $target, Carbon $date)
     {
-        return $target->performanceEntries()
+        $entries = $target->performanceEntries()
             ->whereDate('work_date', $date)
             ->orderBy('sort_order')
             ->get();
+
+        if ($entries->isNotEmpty()) {
+            return $entries;
+        }
+
+        // Cek apakah tanggal ini adalah cuti yang sudah disetujui
+        $hasApprovedLeave = LeaveRequest::query()
+            ->where('user_id', $target->id)
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->where('start_date', '<=', $date->toDateString())
+            ->where('end_date', '>=', $date->toDateString())
+            ->exists();
+
+        if ($hasApprovedLeave) {
+            $fake = new \App\Models\PerformanceEntry();
+            $fake->work_time = '';
+            $fake->task = 'CUTI';
+            $fake->note = 'Cuti';
+            $fake->sort_order = 1;
+
+            return collect([$fake]);
+        }
+
+        return $entries;
     }
 
     private function approverForReport(?User $viewer): ?User

@@ -34,6 +34,7 @@ class DashboardController extends Controller
             ->get();
 
         $canEdit = $month->isSameMonth($now);
+        $leaveDates = $this->approvedLeaveDatesForMonth($user->id, $month);
 
         return view('pjlp.dashboard', [
             'user' => $user,
@@ -45,6 +46,7 @@ class DashboardController extends Controller
             'workDates' => $this->workDatesForMonth($user, $month),
             'stats' => $this->monthStats($user, $month),
             'canEdit' => $canEdit,
+            'leaveDates' => $leaveDates,
             'leaveSummary' => [
                 'pending' => $user->leaveRequests()->where('status', LeaveRequest::STATUS_PENDING)->count(),
                 'approved' => $user->leaveRequests()->where('status', LeaveRequest::STATUS_APPROVED)->count(),
@@ -96,6 +98,7 @@ class DashboardController extends Controller
                 $user->work_dates = $this->workDatesForMonth($user, $month);
                 $user->stats = $this->monthStats($user, $month);
                 $user->entry_dates = $this->entryDatesForMonth($user->id, $month);
+                $user->leave_dates = $this->approvedLeaveDatesForMonth($user->id, $month);
                 $user->latest_entry_date = $user->performanceEntries()
                     ->whereBetween('work_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
                     ->latest('work_date')
@@ -158,7 +161,7 @@ class DashboardController extends Controller
 
     private function entryDatesForMonth(int $userId, Carbon $month): array
     {
-        return PerformanceEntry::query()
+        $entryDates = PerformanceEntry::query()
             ->where('user_id', $userId)
             ->whereBetween('work_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
             ->select('work_date')
@@ -166,6 +169,34 @@ class DashboardController extends Controller
             ->pluck('work_date')
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
             ->all();
+
+        // Also include approved leave dates as "done"
+        $leaveDates = LeaveRequest::query()
+            ->where('user_id', $userId)
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->where(function ($query) use ($month) {
+                $query
+                    ->whereBetween('start_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                    ->orWhereBetween('end_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()]);
+            })
+            ->get()
+            ->flatMap(fn ($leave) => $this->datesForLeaveRange($leave, $month))
+            ->all();
+
+        return array_values(array_unique(array_merge($entryDates, $leaveDates)));
+    }
+
+    private function datesForLeaveRange($leave, Carbon $month): array
+    {
+        $start = Carbon::parse($leave->start_date)->max($month->copy()->startOfMonth());
+        $end = Carbon::parse($leave->end_date)->min($month->copy()->endOfMonth());
+        $dates = [];
+
+        foreach (range(0, (int) $start->diffInDays($end)) as $i) {
+            $dates[] = $start->copy()->addDays($i)->toDateString();
+        }
+
+        return $dates;
     }
 
     private function monthStats(User $user, Carbon $month): array
@@ -227,5 +258,31 @@ class DashboardController extends Controller
             ->pluck('holiday_date')
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
             ->all();
+    }
+
+    private function approvedLeaveDatesForMonth(int $userId, Carbon $month): array
+    {
+        $leaves = LeaveRequest::query()
+            ->where('user_id', $userId)
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->where('start_date', '<=', $month->copy()->endOfMonth())
+            ->where('end_date', '>=', $month->copy()->startOfMonth())
+            ->get(['start_date', 'end_date']);
+
+        $dates = [];
+
+        foreach ($leaves as $leave) {
+            $start = Carbon::parse($leave->start_date)->startOfDay();
+            $end = Carbon::parse($leave->end_date)->startOfDay();
+
+            foreach (range(0, $start->diffInDays($end)) as $i) {
+                $date = $start->copy()->addDays($i);
+                if ($date->greaterThanOrEqualTo($month->copy()->startOfMonth()) && $date->lessThanOrEqualTo($month->copy()->endOfMonth())) {
+                    $dates[] = $date->toDateString();
+                }
+            }
+        }
+
+        return $dates;
     }
 }

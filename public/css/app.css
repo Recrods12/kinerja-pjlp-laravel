@@ -809,6 +809,7 @@ a.mini-item:hover {
 a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20, 36, 31, .12); }
 .day-cell.empty { visibility: hidden; }
 .day-cell.done { background: linear-gradient(145deg, #e7faee, #c8efd8); border-color: rgba(20,122,85,.24); color: #105c3b; }
+.day-cell.cuti { background: linear-gradient(145deg, #e3f0ff, #c4deff); border-color: rgba(30,100,200,.24); color: #1a4a8a; }
 .day-cell.missing { background: linear-gradient(145deg, #fff1ee, #ffd7d0); border-color: rgba(200,67,67,.24); color: #8d2323; }
 .day-cell.future, .day-cell.weekend { background: rgba(244,246,245,.8); color: #9aa6a2; }
 .day-cell.selected { outline: 3px solid rgba(189,139,46,.28); border-color: var(--gold); }

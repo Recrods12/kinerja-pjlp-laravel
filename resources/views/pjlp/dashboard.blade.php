@@ -6,6 +6,7 @@
   $entryDateSet = array_flip($entryDates);
   $holidayDateSet = array_flip($holidayDates);
   $workDateSet = array_flip($workDates);
+  $leaveDateSet = array_flip($leaveDates);
   $today = now()->startOfDay();
   $rows = $entries->count() ? $entries : collect([(object) ['work_time' => '', 'task' => '', 'note' => '']]);
   $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
@@ -75,19 +76,21 @@
             $date = $month->copy()->day($day);
             $iso = $date->toDateString();
             $isWorkday = isset($workDateSet[$iso]);
-            $status = ! $isWorkday ? 'weekend' : ($date->greaterThan($today) ? 'future' : (isset($entryDateSet[$iso]) ? 'done' : 'missing'));
+            $isLeave = isset($leaveDateSet[$iso]);
+            $status = ! $isWorkday ? 'weekend' : ($isLeave ? 'cuti' : ($date->greaterThan($today) ? 'future' : (isset($entryDateSet[$iso]) ? 'done' : 'missing')));
           @endphp
           @if (! $isWorkday)
             <span class="day-cell {{ $status }}">{{ $day }}</span>
           @else
             <a class="day-cell {{ $status }} {{ $iso === $selectedDate->toDateString() ? 'selected' : '' }}"
-               href="{{ route('dashboard', ['date' => $iso, 'month' => $month->month, 'year' => $month->year]) }}">{{ $day }}</a>
+               href="{{ route('dashboard', ['date' => $iso, 'month' => $month->month, 'year' => $month->year]) }}">{{ $isLeave ? 'Cuti' : $day }}</a>
           @endif
         @endfor
       </div>
 
       <div class="legend">
         <span><i class="dot green"></i>Sudah diisi</span>
+        <span><i class="dot blue"></i>Cuti</span>
         <span><i class="dot red"></i>Belum diisi</span>
         <span><i class="dot gray"></i>Libur / belum berjalan</span>
       </div>
@@ -97,7 +100,9 @@
       <div class="panel-header">
         <div>
           <h2>Catatan {{ $selectedDateLabel }}</h2>
-          @if ($canEdit)
+          @if (isset($leaveDateSet[$selectedDate->toDateString()]))
+            <p class="muted">Tanggal ini adalah hari cuti yang sudah disetujui.</p>
+          @elseif ($canEdit)
             <p class="muted">Isi uraian tugas harian, lalu simpan. Baris kosong tidak akan disimpan.</p>
           @else
             <p class="muted">Hanya dapat melihat — pengisian kinerja hanya untuk bulan berjalan.</p>
@@ -105,7 +110,18 @@
         </div>
       </div>
 
-      @if ($canEdit)
+      @if (isset($leaveDateSet[$selectedDate->toDateString()]))
+        <div class="task-list">
+          <div class="task-row" style="opacity:0.7; pointer-events:none;">
+            <label><span>Jam Kerja</span><input value="CUTI" disabled></label>
+            <label><span>Uraian Tugas</span><textarea disabled>CUTI</textarea></label>
+            <label><span>Keterangan</span><input value="CUTI" disabled></label>
+          </div>
+        </div>
+        <div class="actions-row">
+          <a class="ghost-action" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}">Lihat Laporan</a>
+        </div>
+      @elseif ($canEdit)
       <form method="post" action="{{ route('entries.store') }}" id="entry-form">
         @csrf
         <input type="hidden" name="work_date" value="{{ $selectedDate->toDateString() }}">

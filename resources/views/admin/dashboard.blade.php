@@ -423,6 +423,7 @@
             @php
               $entryDateSet = array_flip($person->entry_dates);
               $workDateSet = array_flip($person->work_dates);
+              $leaveDateSet = array_flip($person->leave_dates ?? []);
             @endphp
             <tr data-user-row data-search-index="{{ Str::lower($person->name . ' ' . $person->username . ' ' . $person->email . ' ' . $person->nip . ' ' . $person->nik . ' ' . $person->jabatan . ' ' . $person->unit) }}">
               <td class="sticky-person">
@@ -434,10 +435,13 @@
                   $iso = $date->toDateString();
                   $hasEntry = isset($entryDateSet[$iso]);
                   $isWorkday = isset($workDateSet[$iso]);
-                  $status = ! $isWorkday ? 'weekend' : ($date->greaterThan($today) ? 'future' : ($hasEntry ? 'done' : 'missing'));
+                  $isLeave = isset($leaveDateSet[$iso]);
+                  $status = ! $isWorkday ? 'weekend' : ($isLeave ? 'cuti' : ($date->greaterThan($today) ? 'future' : ($hasEntry ? 'done' : 'missing')));
                 @endphp
                 <td class="matrix-cell {{ $status }}">
-                  @if ($hasEntry)
+                  @if ($isLeave)
+                    <span title="Cuti">C</span>
+                  @elseif ($hasEntry)
                     <a title="Lihat laporan {{ $formatDate($iso) }}"
                        href="{{ route('admin.reports.show', ['user' => $person, 'date' => $iso]) }}">✓</a>
                   @elseif (! $isWorkday)
