@@ -48,6 +48,33 @@ class ReportController extends Controller
         ]);
     }
 
+    public function downloadPdf(Request $request)
+    {
+        $user = Auth::user();
+        $month = Carbon::create(
+            (int) $request->query('year', now()->year),
+            (int) $request->query('month', now()->month),
+            1
+        );
+
+        $reportPages = $this->reportPagesForMonth($user, $month);
+
+        if (empty($reportPages)) {
+            return back()->withErrors(['download' => 'Tidak ada data kinerja untuk bulan ini.']);
+        }
+
+        $pdf = Pdf::loadView('reports.pdf', [
+            'target' => $user,
+            'approver' => $this->approverForReport($user),
+            'reportPages' => $reportPages,
+        ])->setPaper('a4', 'landscape');
+
+        $monthLabel = $month->translatedFormat('F-Y');
+        $fileName = $user->name . ' - kinerja ' . $monthLabel . '.pdf';
+
+        return $pdf->download($fileName);
+    }
+
     public function downloadZip(Request $request)
     {
         set_time_limit(300);

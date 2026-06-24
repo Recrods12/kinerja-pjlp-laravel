@@ -26,6 +26,9 @@
     @endunless
     <a class="ghost-action" href="{{ route('dashboard', ['month' => $selectedDate->month, 'year' => $selectedDate->year, 'date' => $selectedDate->toDateString()]) }}">Kembali</a>
     <button class="primary-action" type="button" onclick="window.print()">Cetak / Simpan PDF</button>
+    @if ($showAll)
+      <a class="primary-action" href="{{ auth()->user()->role === 'admin' ? route('admin.reports.downloadZip', ['month' => $selectedDate->month, 'year' => $selectedDate->year]) : route('reports.downloadPdf', ['month' => $selectedDate->month, 'year' => $selectedDate->year]) }}">Download Kinerja</a>
+    @endif
   </div>
 
   <section id="print-area" class="report-preview {{ $showAll ? 'all-pages' : '' }}">

@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:pjlp')->group(function () {
         Route::post('/kinerja', [PerformanceEntryController::class, 'store'])->name('entries.store');
         Route::get('/laporan', [ReportController::class, 'show'])->name('reports.show');
+        Route::get('/laporan/download-pdf', [ReportController::class, 'downloadPdf'])->name('reports.downloadPdf');
         Route::get('/absensi', [AttendanceController::class, 'index'])->name('attendance.index');
         Route::get('/absensi/riwayat/{attendanceRecord}', [AttendanceController::class, 'show'])->name('attendance.show');
         Route::get('/absensi/riwayat/{attendanceRecord}/edit', [AttendanceController::class, 'edit'])->name('attendance.edit');
