@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
-use App\Models\User;
 use App\Models\Notification;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -147,6 +148,17 @@ class LeaveRequestController extends Controller
         abort_unless($leaveRequest->user_id === $request->user()->id, 403);
 
         return view('leave.show', compact('leaveRequest'));
+    }
+
+    public function print(Request $request, LeaveRequest $leaveRequest): View
+    {
+        abort_unless($leaveRequest->user_id === $request->user()->id, 403);
+        abort_unless($leaveRequest->status === LeaveRequest::STATUS_APPROVED, 403);
+
+        $leaveRequest->load('user', 'approver');
+        $approver = $leaveRequest->approver;
+
+        return view('admin.leave.print', compact('leaveRequest', 'approver'));
     }
 
     private function buildCalendarDays(Carbon $month, $leaveRequests): array

@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/cuti/ajukan', [LeaveRequestController::class, 'create'])->name('leave.create');
         Route::post('/cuti', [LeaveRequestController::class, 'store'])->name('leave.store');
         Route::get('/cuti/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leave.show');
+        Route::get('/cuti/{leaveRequest}/cetak', [LeaveRequestController::class, 'print'])->name('leave.print');
     });
 
     Route::middleware('role:admin')->group(function () {

@@ -35,6 +35,9 @@
 
     <div class="actions-row">
       <a class="ghost-action" href="{{ route('leave.index') }}">Kembali</a>
+      @if ($leaveRequest->status === \App\Models\LeaveRequest::STATUS_APPROVED)
+        <a class="primary-action" href="{{ route('leave.print', $leaveRequest) }}" target="_blank">Cetak Surat Cuti</a>
+      @endif
     </div>
   </section>
 @endsection

@@ -136,7 +136,7 @@
   </head>
   <body>
     <div class="actions">
-      <a href="{{ route('admin.leave.show', $leaveRequest) }}">Kembali</a>
+      <a href="{{ auth()->user()?->role === 'admin' ? route('admin.leave.show', $leaveRequest) : route('leave.show', $leaveRequest) }}">Kembali</a>
       <button onclick="window.print()">Cetak / Simpan PDF</button>
     </div>
 
