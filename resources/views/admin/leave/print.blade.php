@@ -80,6 +80,13 @@
         text-align: center;
         font-weight: 800;
       }
+      .jabatan-cell {
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.5;
+        padding: 6px 4px;
+        font-weight: 700;
+      }
       .signature-head {
         height: 12mm;
         text-align: center;
@@ -205,6 +212,14 @@
           </tr>
           <tr>
             <td colspan="2" class="signature-head">Tgl : {{ $leaveRequest->approved_at?->translatedFormat('d F Y') ?? '-' }}</td>
+            <td colspan="2"></td>
+          </tr>
+          <tr>
+            <td colspan="2" class="jabatan-cell">
+              Kepala Sub Bagian Umum<br>
+              Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
+              Provinsi DKI Jakarta
+            </td>
             <td colspan="2" class="signature-head">Pemohon,</td>
           </tr>
           <tr>
@@ -221,11 +236,11 @@
           </tr>
           <tr>
             <td colspan="2" class="signature-name"><strong>{{ $approverName }}</strong></td>
-            <td colspan="2" class="signature-name"><strong>{{ $leaveRequest->user->name }}</strong></td>
+            <td colspan="2"></td>
           </tr>
           <tr>
             <td colspan="2" class="signature-nip">NIP {{ $approverNip }}</td>
-            <td colspan="2" class="signature-nip right-nik">NIK. {{ $leaveRequest->user->nik ?: '-' }}</td>
+            <td colspan="2" class="signature-nip">NIK. {{ $leaveRequest->user->nik ?: '-' }}</td>
           </tr>
         </tbody>
       </table>
