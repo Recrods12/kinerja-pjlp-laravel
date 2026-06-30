@@ -1,18 +1,4 @@
-    <div class="page-actions">
-      <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download Bulanan</a>
-      <form method="post" action="{{ route('admin.settings.togglePastEditable') }}" style="display:inline">
-        @csrf
-        <button type="submit" class="{{ $pastMonthsEditable ? 'ghost-action' : 'danger-action' }}" style="border-color:{{ $pastMonthsEditable ? '#147a55' : '#c64343' }}">
-          {{ $pastMonthsEditable ? '✅ Edit bulan lalu: ON' : '❌ Edit bulan lalu: OFF' }}
-        </button>
-      </form>
-    </div>
-        @csrf
-        <button type="submit" class="{{ $pastMonthsEditable ? 'danger-action' : 'primary-action' }}" style="padding:7px 14px;font-size:13px;">
-          {{ $pastMonthsEditable ? '🔓 Nonaktifkan Edit Bulan Lalu' : '🔒 Izinkan Edit Bulan Lalu' }}
-        </button>
-      </form>
-    </div>@extends('layouts.app')
+@extends('layouts.app')
 
 @php
   $prevMonth = $month->copy()->subMonth();
@@ -176,7 +162,9 @@
           <p class="muted">Belum ada pengajuan cuti terbaru.</p>
         @endforelse
       </div>
-    </article>    <article class="panel insight-panel rekap-panel">
+    </article>
+
+    <article class="panel insight-panel rekap-panel">
       <div class="panel-header compact">
         <div>
           <h2>Rekap Bulanan</h2>
@@ -299,118 +287,116 @@
     </article>
   </section>
 
-  
-    <section class="panel">
-      <div class="panel-header">
-        <div>
-          <h2>Dashboard Admin</h2>
-          <p class="muted">Pantau pengisian kinerja PJLP pada bulan {{ $monthLabel }}.</p>
-        </div>
-        <div class="admin-toolbar">
-          <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download Bulanan</a>
-          <a class="ghost-action" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Export Excel</a>
-          <a class="ghost-action" href="{{ route('admin.holidays.index') }}">Kelola Libur</a>
-          <div class="month-nav">
-            <a class="icon-action" href="{{ route('dashboard', array_merge($activeFilters, ['month' => $prevMonth->month, 'year' => $prevMonth->year])) }}">&lsaquo;</a>
-            <form class="month-jump-form admin-month-jump" method="get" action="{{ route('dashboard') }}">
-              @if ($selectedRole)
-                <input type="hidden" name="jabatan" value="{{ $selectedRole }}">
-              @endif
-              @if ($search)
-                <input type="hidden" name="search" value="{{ $search }}">
-              @endif
-              <select name="month" aria-label="Pilih bulan admin">
-                @for ($monthNumber = 1; $monthNumber <= 12; $monthNumber++)
-                  <option value="{{ $monthNumber }}" @selected($month->month === $monthNumber)>{{ $monthNames[$monthNumber] }}</option>
-                @endfor
-              </select>
-              <select name="year" aria-label="Pilih tahun admin">
-                @for ($year = now()->year - 3; $year <= now()->year + 2; $year++)
-                  <option value="{{ $year }}" @selected($month->year === $year)>{{ $year }}</option>
-                @endfor
-              </select>
-            </form>
-            <a class="icon-action" href="{{ route('dashboard', array_merge($activeFilters, ['month' => $nextMonth->month, 'year' => $nextMonth->year])) }}">&rsaquo;</a>
-          </div>
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Daftar PJLP</h2>
+        <p class="muted">Pantau pengisian kinerja PJLP pada bulan {{ $monthLabel }}.</p>
+      </div>
+      <div class="admin-toolbar">
+        <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download Bulanan</a>
+        <a class="ghost-action" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Export Excel</a>
+        <a class="ghost-action" href="{{ route('admin.holidays.index') }}">Kelola Libur</a>
+        <div class="month-nav">
+          <a class="icon-action" href="{{ route('dashboard', array_merge($activeFilters, ['month' => $prevMonth->month, 'year' => $prevMonth->year])) }}">&lsaquo;</a>
+          <form class="month-jump-form admin-month-jump" method="get" action="{{ route('dashboard') }}">
+            @if ($selectedRole)
+              <input type="hidden" name="jabatan" value="{{ $selectedRole }}">
+            @endif
+            @if ($search)
+              <input type="hidden" name="search" value="{{ $search }}">
+            @endif
+            <select name="month" aria-label="Pilih bulan admin">
+              @for ($monthNumber = 1; $monthNumber <= 12; $monthNumber++)
+                <option value="{{ $monthNumber }}" @selected($month->month === $monthNumber)>{{ $monthNames[$monthNumber] }}</option>
+              @endfor
+            </select>
+            <select name="year" aria-label="Pilih tahun admin">
+              @for ($year = now()->year - 3; $year <= now()->year + 2; $year++)
+                <option value="{{ $year }}" @selected($month->year === $year)>{{ $year }}</option>
+              @endfor
+            </select>
+          </form>
+          <a class="icon-action" href="{{ route('dashboard', array_merge($activeFilters, ['month' => $nextMonth->month, 'year' => $nextMonth->year])) }}">&rsaquo;</a>
         </div>
       </div>
+    </div>
 
-      <form class="admin-filter-bar" method="get" action="{{ route('dashboard') }}" id="admin-filter-form">
-        <input type="hidden" name="month" value="{{ $month->month }}">
-        <input type="hidden" name="year" value="{{ $month->year }}">
-        <label class="filter-search">
-          <span>Cari Data</span>
-          <input name="search" value="{{ $search }}" placeholder="Nama, username, email, NIP PJLP, NIK" autocomplete="off" data-live-search>
-        </label>
-        <div class="filter-tabs">
-          <a class="filter-chip {{ $selectedRole ? '' : 'active' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'search' => $search], fn ($value) => filled($value))) }}">Semua <span class="badge">{{ $totalPjlpCount }}</span></a>
-          @foreach ($jobRoles as $jobRole)
-            <a class="filter-chip {{ $selectedRole === $jobRole ? 'active' : '' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'jabatan' => $jobRole, 'search' => $search], fn ($value) => filled($value))) }}">{{ $jobRole }} <span class="badge">{{ $roleCountMap[$jobRole] ?? 0 }}</span></a>
-          @endforeach
-        </div>
-        <button class="primary-action" type="submit">Cari</button>
-        @if ($selectedRole || $search)
-          <a class="ghost-action" href="{{ route('dashboard', ['month' => $month->month, 'year' => $month->year]) }}">Reset</a>
-        @endif
-      </form>
+    <form class="admin-filter-bar" method="get" action="{{ route('dashboard') }}" id="admin-filter-form">
+      <input type="hidden" name="month" value="{{ $month->month }}">
+      <input type="hidden" name="year" value="{{ $month->year }}">
+      <label class="filter-search">
+        <span>Cari Data</span>
+        <input name="search" value="{{ $search }}" placeholder="Nama, username, email, NIP PJLP, NIK" autocomplete="off" data-live-search>
+      </label>
+      <div class="filter-tabs">
+        <a class="filter-chip {{ $selectedRole ? '' : 'active' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'search' => $search], fn ($value) => filled($value))) }}">Semua <span class="badge">{{ $totalPjlpCount }}</span></a>
+        @foreach ($jobRoles as $jobRole)
+          <a class="filter-chip {{ $selectedRole === $jobRole ? 'active' : '' }}" href="{{ route('dashboard', array_filter(['month' => $month->month, 'year' => $month->year, 'jabatan' => $jobRole, 'search' => $search], fn ($value) => filled($value))) }}">{{ $jobRole }} <span class="badge">{{ $roleCountMap[$jobRole] ?? 0 }}</span></a>
+        @endforeach
+      </div>
+      <button class="primary-action" type="submit">Cari</button>
+      @if ($selectedRole || $search)
+        <a class="ghost-action" href="{{ route('dashboard', ['month' => $month->month, 'year' => $month->year]) }}">Reset</a>
+      @endif
+    </form>
 
-      <div class="table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>PJLP</th>
-              <th>NIP PJLP</th>
-              <th>Jabatan</th>
-              <th>Progres</th>
-              <th>%</th>
-              <th>Terakhir Isi</th>
-              <th>Aksi</th>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>PJLP</th>
+            <th>NIP PJLP</th>
+            <th>Jabatan</th>
+            <th>Progres</th>
+            <th>%</th>
+            <th>Terakhir Isi</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          @forelse ($pjlpUsers as $person)
+            @php
+              $doneCount = $person->stats['done'];
+              $missingCount = $person->stats['missing'];
+              $totalCount = $doneCount + $missingCount;
+              $pct = $totalCount > 0 ? round(($doneCount / $totalCount) * 100) : 0;
+              $barColor = $pct >= 80 ? '#0d6f4b' : ($pct >= 50 ? '#e8a838' : '#d63c3c');
+            @endphp
+            <tr data-user-row data-search-index="{{ Str::lower($person->name . ' ' . $person->username . ' ' . $person->email . ' ' . $person->nip . ' ' . $person->nik . ' ' . $person->jabatan . ' ' . $person->unit) }}">
+              <td class="admin-user-cell">
+                @if ($person->avatar_path)
+                  <img class="admin-avatar" src="{{ asset('storage/' . $person->avatar_path) }}" alt="Foto {{ $person->name }}">
+                @else
+                  <span class="admin-avatar" style="background: {{ $jabatanColor($person->jabatan ?: 'PJLP')['bg'] }}">{{ \Illuminate\Support\Str::substr($person->name, 0, 1) }}</span>
+                @endif
+                <strong>{{ $person->name }}</strong>
+              </td>
+              <td>{{ $person->nip ?: '-' }}</td>
+              <td><span class="muted">{{ $person->jabatan ?: 'PJLP' }}</span></td>
+              <td class="admin-progress-cell">
+                <div class="admin-progress-bar">
+                  <i style="width: {{ $pct }}%; background: {{ $barColor }}"></i>
+                </div>
+                <span class="admin-progress-label">{{ $doneCount }}/{{ $totalCount }}</span>
+              </td>
+              <td><strong style="color: {{ $barColor }}">{{ $pct }}%</strong></td>
+              <td>{{ $person->latest_entry_date ? $formatDate($person->latest_entry_date) : '-' }}</td>
+              <td>
+                @if ($person->latest_entry_date)
+                  <a class="ghost-action" href="{{ route('admin.reports.show', ['user' => $person, 'date' => \Carbon\Carbon::parse($person->latest_entry_date)->toDateString()]) }}">Laporan</a>
+                @else
+                  -
+                @endif
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            @forelse ($pjlpUsers as $person)
-              @php
-                $doneCount = $person->stats['done'];
-                $missingCount = $person->stats['missing'];
-                $totalCount = $doneCount + $missingCount;
-                $pct = $totalCount > 0 ? round(($doneCount / $totalCount) * 100) : 0;
-                $barColor = $pct >= 80 ? '#0d6f4b' : ($pct >= 50 ? '#e8a838' : '#d63c3c');
-              @endphp
-              <tr data-user-row data-search-index="{{ Str::lower($person->name . ' ' . $person->username . ' ' . $person->email . ' ' . $person->nip . ' ' . $person->nik . ' ' . $person->jabatan . ' ' . $person->unit) }}">
-                <td class="admin-user-cell">
-                  @if ($person->avatar_path)
-                    <img class="admin-avatar" src="{{ asset('storage/' . $person->avatar_path) }}" alt="Foto {{ $person->name }}">
-                  @else
-                    <span class="admin-avatar" style="background: {{ $jabatanColor($person->jabatan ?: 'PJLP')['bg'] }}">{{ \Illuminate\Support\Str::substr($person->name, 0, 1) }}</span>
-                  @endif
-                  <strong>{{ $person->name }}</strong>
-                </td>
-                <td>{{ $person->nip ?: '-' }}</td>
-                <td><span class="muted">{{ $person->jabatan ?: 'PJLP' }}</span></td>
-                <td class="admin-progress-cell">
-                  <div class="admin-progress-bar">
-                    <i style="width: {{ $pct }}%; background: {{ $barColor }}"></i>
-                  </div>
-                  <span class="admin-progress-label">{{ $doneCount }}/{{ $totalCount }}</span>
-                </td>
-                <td><strong style="color: {{ $barColor }}">{{ $pct }}%</strong></td>
-                <td>{{ $person->latest_entry_date ? $formatDate($person->latest_entry_date) : '-' }}</td>
-                <td>
-                  @if ($person->latest_entry_date)
-                    <a class="ghost-action" href="{{ route('admin.reports.show', ['user' => $person, 'date' => \Carbon\Carbon::parse($person->latest_entry_date)->toDateString()]) }}">Laporan</a>
-                  @else
-                    -
-                  @endif
-                </td>
-              </tr>
-            @empty
-              <tr><td colspan="7">Tidak ada data PJLP yang cocok.</td></tr>
-            @endforelse
-          </tbody>
-        </table>
-      </div>
-    </section>
-  
+          @empty
+            <tr><td colspan="7">Tidak ada data PJLP yang cocok.</td></tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
+  </section>
 
   <section class="panel" id="monthly">
     <div class="panel-header">
