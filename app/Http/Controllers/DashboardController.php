@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PerformanceEntry;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class DashboardController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $canEdit = $month->isSameMonth($now);
+        $canEdit = $month->isSameMonth($now) || Setting::isPastMonthsEditable();
         $leaveDates = $this->approvedLeaveDatesForMonth($user->id, $month);
 
         return view('pjlp.dashboard', [
@@ -142,6 +143,7 @@ class DashboardController extends Controller
                 ->latest()
                 ->limit(5)
                 ->get(),
+            'pastMonthsEditable' => Setting::isPastMonthsEditable(),
             'roleTotalCounts' => $roleTotalCounts,
             'roleSummaries' => collect($jobRoles)->map(function (string $jobRole) use ($pjlpUsers) {
                 $users = $pjlpUsers->where('jabatan', $jobRole);
@@ -284,5 +286,14 @@ class DashboardController extends Controller
         }
 
         return $dates;
+    }
+
+    public function togglePastEditable(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $current = Setting::isPastMonthsEditable();
+        Setting::setValue('past_months_editable', $current ? 'false' : 'true');
+
+        $status = $current ? 'dinonaktifkan' : 'diaktifkan';
+        return back()->with('status', "Izin edit bulan lalu berhasil {$status}.");
     }
 }

@@ -1,4 +1,18 @@
-@extends('layouts.app')
+    <div class="page-actions">
+      <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download Bulanan</a>
+      <form method="post" action="{{ route('admin.settings.togglePastEditable') }}" style="display:inline">
+        @csrf
+        <button type="submit" class="{{ $pastMonthsEditable ? 'ghost-action' : 'danger-action' }}" style="border-color:{{ $pastMonthsEditable ? '#147a55' : '#c64343' }}">
+          {{ $pastMonthsEditable ? '✅ Edit bulan lalu: ON' : '❌ Edit bulan lalu: OFF' }}
+        </button>
+      </form>
+    </div>
+        @csrf
+        <button type="submit" class="{{ $pastMonthsEditable ? 'danger-action' : 'primary-action' }}" style="padding:7px 14px;font-size:13px;">
+          {{ $pastMonthsEditable ? '🔓 Nonaktifkan Edit Bulan Lalu' : '🔒 Izinkan Edit Bulan Lalu' }}
+        </button>
+      </form>
+    </div>@extends('layouts.app')
 
 @php
   $prevMonth = $month->copy()->subMonth();
@@ -67,6 +81,12 @@
       <p class="muted">Pantau pengisian kinerja PJLP, pengajuan cuti, dan rekap bulanan dalam satu layar.</p>
     </div>
     <div class="page-actions">
+      <form method="post" action="{{ route('admin.settings.togglePastEditable') }}" style="display:inline">
+        @csrf
+        <button type="submit" class="{{ $pastMonthsEditable ? 'ghost-action' : 'primary-action' }}">
+          {{ $pastMonthsEditable ? '❌ Nonaktifkan' : '✏️ Izinkan' }} Edit Bulan Lalu
+        </button>
+      </form>
       <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download Bulanan</a>
     </div>
   </section>
