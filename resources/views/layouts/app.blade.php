@@ -200,7 +200,7 @@
           const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
           // Load notifications
-          const loadNotifications = () => {
+          let loadNotifications = () => {
             fetch('/notifications')
               .then(r => r.json())
               .then(data => {
@@ -358,17 +358,6 @@
                 lastNotifCount = freshCount;
               })
               .catch(() => {});
-          };
-
-          // Override loadNotifications to use cache first, then fetch fresh
-          const origLoad = loadNotifications;
-          loadNotifications = () => {
-            if (window.__notifCache) {
-              renderNotifications(window.__notifCache.notifications);
-              updateBadge(window.__notifCache.unread_count);
-              window.__notifCache = null;
-            }
-            origLoad();
           };
 
           // Poll every 15 seconds
