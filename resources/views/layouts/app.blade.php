@@ -300,19 +300,105 @@
             }).catch(() => {});
           });
 
-          // Poll unread count every 60 seconds
-          const pollUnread = () => {
+          // ─── Real-time polling ──────────────────────────────
+          let lastNotifCount = 0;
+          let lastNotifData = null;
+
+          // Show a small toast notification
+          const showNotifToast = (title, body) => {
+            const existing = document.querySelector('.notif-toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'notif-toast';
+            toast.innerHTML = '<strong>' + escapeHtml(title) + '</strong>' +
+              (body ? '<span>' + escapeHtml(body) + '</span>' : '');
+            toast.addEventListener('click', () => {
+              toast.remove();
+              notifToggle.click();
+            });
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+              toast.classList.remove('show');
+              setTimeout(() => toast.remove(), 400);
+            }, 5000);
+          };
+
+          const pollNotifications = () => {
+            // Always refresh badge count
+            fetch('/notifications/unread-count')
+              .then(r => r.json())
+              .then(data => {
+                // Pulse bell if new notification arrived
+                if (data.count > lastNotifCount && lastNotifCount >= 0 && !isNotifOpen) {
+                  notifToggle.classList.add('pulse');
+                  setTimeout(() => notifToggle.classList.remove('pulse'), 2000);
+                  // Show toast with the latest notification title
+                  if (window.__notifCache && window.__notifCache.notifications && window.__notifCache.notifications.length > 0) {
+                    const latest = window.__notifCache.notifications[0];
+                    if (latest && !latest.read_at) {
+                      showNotifToast(latest.title, latest.body);
+                    }
+                  }
+                  // Flash browser title if tab hidden
+                  if (data.count > 0 && document.hidden) {
+                    document.title = '(' + data.count + ') ' + document.title.replace(/^\(\d+\)\s*/, '');
+                  }
+                }
+                lastNotifCount = data.count;
+                updateBadge(data.count);
+              })
+              .catch(() => {});
+
+            // Background refresh the list (only when dropdown isn't open to avoid flicker)
             if (!isNotifOpen) {
-              fetch('/notifications/unread-count')
+              fetch('/notifications')
                 .then(r => r.json())
-                .then(data => updateBadge(data.count))
+                .then(data => {
+                  if (!isNotifOpen) {
+                    // Store new notifications for toast
+                    const prevData = window.__notifCache;
+                    window.__notifCache = data;
+                    // Check if there's a new unread notification since last poll
+                    if (prevData && data.notifications && data.notifications.length > 0) {
+                      const latest = data.notifications[0];
+                      if (latest && !latest.read_at && lastNotifCount > 0) {
+                        // already handled by badge count check above
+                      }
+                    }
+                  }
+                })
                 .catch(() => {});
             }
           };
 
-          setInterval(pollUnread, 60000);
-          // Initial load for badge
-          pollUnread();
+          // Override loadNotifications to use cache first, then fetch fresh
+          const origLoad = loadNotifications;
+          loadNotifications = () => {
+            if (window.__notifCache) {
+              renderNotifications(window.__notifCache.notifications);
+              updateBadge(window.__notifCache.unread_count);
+              window.__notifCache = null;
+            }
+            origLoad();
+          };
+
+          // Poll every 15 seconds (real-time feeling)
+          setInterval(pollNotifications, 15000);
+          // Initial load
+          pollNotifications();
+          // Also load notifications on page load for first open
+          setTimeout(() => {
+            fetch('/notifications')
+              .then(r => r.json())
+              .then(data => {
+                window.__notifCache = data;
+                lastNotifCount = data.unread_count;
+                updateBadge(data.unread_count);
+              })
+              .catch(() => {});
+          }, 500);
 
           // Utility: time since
           function timeSince(date) {

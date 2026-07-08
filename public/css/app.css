@@ -4387,3 +4387,48 @@ img.admin-avatar.big {
     padding: 10px 14px;
   }
 }
+
+/* ─── Notification Pulse Animation ─── */
+.notif-bell.pulse {
+  animation: notif-pulse 0.5s ease-in-out 3;
+}
+
+@keyframes notif-pulse {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.2); color: #fbbf24; }
+  50% { transform: scale(0.95); }
+  75% { transform: scale(1.1); color: #f59e0b; }
+}
+
+/* Toast notification for new real-time alerts */
+.notif-toast {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 12px 18px;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.25);
+  max-width: 360px;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-12px);
+  transition: opacity .3s ease, transform .3s ease;
+  pointer-events: none;
+}
+.notif-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.notif-toast strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+.notif-toast span {
+  font-size: 12px;
+  opacity: .75;
+}
