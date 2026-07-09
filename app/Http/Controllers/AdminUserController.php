@@ -251,7 +251,7 @@ class AdminUserController extends Controller
             if ($leaveQuota <= 0) $leaveQuota = 12;
 
             if (! empty($rowErrors)) {
-                $errors[] = $name ?: "Baris $rowNum";
+                $errors[] = ($name ?: "Baris $rowNum") . ': ' . implode('; ', $rowErrors);
                 continue;
             }
 
@@ -299,7 +299,9 @@ class AdminUserController extends Controller
             $message .= ' ' . count($errors) . ' baris gagal.';
         }
 
-        return redirect()->route('admin.users.index')->with('status', $message);
+        return redirect()->route('admin.users.index')
+            ->with('status', $message)
+            ->with('import_errors', $errors);
     }
 
     private function validatedData(Request $request, ?User $user = null): array

@@ -155,6 +155,18 @@
       @if (session('status'))
         <div class="notice">{{ session('status') }}</div>
       @endif
+      @if (session('import_errors'))
+        <div class="notice import-error-notice">
+          <span>{{ count(session('import_errors')) }} baris gagal. <a href="#" onclick="event.preventDefault();this.parentElement.nextElementSibling.style.display='block';this.style.display='none'">Detail</a></span>
+        </div>
+        <div class="import-error-detail" style="display:none;margin:-12px 0 16px;padding:8px 16px;background:#fff3f3;border:1px solid #e0b4b4;border-radius:6px;font-size:13px">
+          <ul style="margin:0;padding-left:20px">
+            @foreach (session('import_errors') as $err)
+              <li>{{ $err }}</li>
+            @endforeach
+          </ul>
+        </div>
+      @endif
       @if ($errors->any())
         <div class="notice error-notice">{{ $errors->first() }}</div>
       @endif
