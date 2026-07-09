@@ -80,6 +80,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
         Route::put('/admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
         Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
+        Route::get('/admin/users/import/template', [AdminUserController::class, 'downloadTemplate'])->name('admin.users.importTemplate');
+        Route::post('/admin/users/import', [AdminUserController::class, 'import'])->name('admin.users.import');
         Route::post('/admin/settings/toggle-past-editable', [DashboardController::class, 'togglePastEditable'])->name('admin.settings.togglePastEditable');
     });
 });

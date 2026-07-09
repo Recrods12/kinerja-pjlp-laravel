@@ -5,8 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class AdminUserController extends Controller
 {
@@ -68,6 +74,216 @@ class AdminUserController extends Controller
         return redirect()->route('admin.users.index')->with('status', 'User berhasil dihapus.');
     }
 
+    /**
+     * Download template Excel untuk import user.
+     */
+    public function downloadTemplate()
+    {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Template Import User');
+
+        $headers = [
+            'Nama Lengkap*', 'Username*', 'Password*', 'Email', 'Role*',
+            'NIP', 'NIK', 'Jabatan', 'Unit', 'No. HP', 'Alamat',
+            'Kuota Cuti', 'Tim Keamanan', 'Tanggal Mulai Siklus',
+        ];
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0D6F4B']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        ];
+
+        foreach ($headers as $i => $header) {
+            $sheet->setCellValueByColumnAndRow($i + 1, 1, $header);
+        }
+        $sheet->getRowDimension(1)->setRowHeight(22);
+        $sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
+
+        $widths = ['A' => 22, 'B' => 18, 'C' => 18, 'D' => 28, 'E' => 12,
+                    'F' => 22, 'G' => 22, 'H' => 22, 'I' => 20, 'J' => 16,
+                    'K' => 30, 'L' => 14, 'M' => 16, 'N' => 22];
+        foreach ($widths as $colLetter => $w) {
+            $sheet->getColumnDimension($colLetter)->setWidth($w);
+        }
+
+        // Example rows
+        $sheet->setCellValue('A2', 'Contoh: John Doe');
+        $sheet->setCellValue('B2', 'johndoe');
+        $sheet->setCellValue('C2', 'password123');
+        $sheet->setCellValue('D2', 'johndoe@example.com');
+        $sheet->setCellValue('E2', 'pjlp');
+        $sheet->setCellValue('F2', '1234567890');
+        $sheet->setCellValue('G2', '3201010101010001');
+        $sheet->setCellValue('H2', 'Driver');
+        $sheet->setCellValue('I2', 'Subbag Umum');
+        $sheet->setCellValue('J2', '08123456789');
+        $sheet->setCellValue('K2', 'Jl. Contoh No. 1');
+        $sheet->setCellValue('L2', '12');
+        $sheet->setCellValue('M2', '');
+        $sheet->setCellValue('N2', '');
+
+        $sheet->setCellValue('A3', 'Contoh: Jane Smith');
+        $sheet->setCellValue('B3', 'janesmith');
+        $sheet->setCellValue('C3', 'pass456');
+        $sheet->setCellValue('D3', 'jane@example.com');
+        $sheet->setCellValue('E3', 'admin');
+        $sheet->setCellValue('F3', '');
+        $sheet->setCellValue('G3', '');
+        $sheet->setCellValue('H3', 'Admin');
+        $sheet->setCellValue('I3', '');
+        $sheet->setCellValue('J3', '');
+        $sheet->setCellValue('K3', '');
+        $sheet->setCellValue('L3', '12');
+        $sheet->setCellValue('M3', '');
+        $sheet->setCellValue('N3', '');
+
+        $exampleStyle = [
+            'font' => ['italic' => true, 'color' => ['rgb' => '888888']],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+        ];
+        $sheet->getStyle('A2:N3')->applyFromArray($exampleStyle);
+
+        // Notes
+        $sheet->setCellValue('A5', 'Petunjuk:');
+        $sheet->setCellValue('A6', '- Kolom dengan tanda * (bintang) wajib diisi.');
+        $sheet->setCellValue('A7', '- Role: pjlp atau admin.');
+        $sheet->setCellValue('A8', '- Jabatan: Driver, Kebersihan, Keamanan, Mekanikal Enginer, Pelayanan Umum, PJLP, Admin.');
+        $sheet->setCellValue('A9', '- Tim Keamanan: A, B, C (hanya untuk jabatan Keamanan).');
+        $sheet->setCellValue('A10', '- Tanggal Mulai Siklus: format YYYY-MM-DD (hanya untuk Keamanan).');
+        $sheet->setCellValue('A11', '- Kuota Cuti: default 12 jika dikosongkan.');
+        $sheet->setCellValue('A12', '- Password minimal 6 karakter.');
+        $sheet->getStyle('A5:A12')->getFont()->setBold(true);
+        $sheet->getStyle('A6:A12')->getFont()->setBold(false);
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'template-import-user.xlsx';
+
+        return response()->stream(
+            function () use ($writer) {
+                $writer->save('php://output');
+            },
+            200,
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => "attachment; filename=\"$filename\"",
+            ]
+        );
+    }
+
+    /**
+     * Import user dari file Excel.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:2048'],
+        ]);
+
+        $file = $request->file('file');
+        $spreadsheet = IOFactory::load($file->getPathname());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        if (count($rows) < 2) {
+            return back()->withErrors(['file' => 'File Excel kosong.']);
+        }
+
+        // Remove header row
+        array_shift($rows);
+
+        $jobRoles = ['Driver', 'Kebersihan', 'Keamanan', 'Mekanikal Enginer', 'Pelayanan Umum', 'PJLP', 'Admin'];
+        $imported = 0;
+        $errors = [];
+
+        foreach ($rows as $index => $row) {
+            $rowNum = $index + 2;
+
+            // Skip empty rows
+            if (empty(array_filter($row))) {
+                continue;
+            }
+
+            $name = trim((string) ($row[0] ?? ''));
+            $username = trim((string) ($row[1] ?? ''));
+            $password = (string) ($row[2] ?? '');
+            $email = trim((string) ($row[3] ?? ''));
+            $role = strtolower(trim((string) ($row[4] ?? '')));
+            $nip = trim((string) ($row[5] ?? ''));
+            $nik = trim((string) ($row[6] ?? ''));
+            $jabatan = trim((string) ($row[7] ?? ''));
+            $unit = trim((string) ($row[8] ?? ''));
+            $phone = trim((string) ($row[9] ?? ''));
+            $address = trim((string) ($row[10] ?? ''));
+            $leaveQuota = (int) ($row[11] ?? 12);
+            $securityTeam = trim((string) ($row[12] ?? ''));
+            $cycleStart = trim((string) ($row[13] ?? ''));
+
+            // Validation
+            $rowErrors = [];
+
+            if ($name === '') $rowErrors[] = 'Nama wajib diisi';
+            if ($username === '') $rowErrors[] = 'Username wajib diisi';
+            elseif (User::where('username', $username)->exists()) $rowErrors[] = "Username '$username' sudah terdaftar";
+            if (strlen($password) < 6) $rowErrors[] = 'Password minimal 6 karakter';
+            if (! in_array($role, ['pjlp', 'admin'], true)) $rowErrors[] = "Role harus 'pjlp' atau 'admin'";
+            if ($email !== '' && User::where('email', $email)->exists()) $rowErrors[] = "Email '$email' sudah terdaftar";
+            if ($jabatan !== '' && ! in_array($jabatan, $jobRoles, true)) $rowErrors[] = "Jabatan '$jabatan' tidak valid";
+            if ($securityTeam !== '' && ! in_array($securityTeam, ['A', 'B', 'C'], true)) $rowErrors[] = "Tim Keamanan harus A, B, atau C";
+            if ($cycleStart !== '' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $cycleStart)) $rowErrors[] = "Tanggal Mulai Siklus format YYYY-MM-DD";
+            if ($leaveQuota <= 0) $leaveQuota = 12;
+
+            if (! empty($rowErrors)) {
+                $errors[] = "Baris $rowNum ($name): " . implode('; ', $rowErrors);
+                continue;
+            }
+
+            // Normalize
+            if ($role === 'admin') {
+                $jabatan = 'Admin';
+                $securityTeam = null;
+                $cycleStart = null;
+            } elseif ($jabatan === '' || $jabatan === 'Admin') {
+                $jabatan = 'PJLP';
+            }
+
+            if ($jabatan !== 'Keamanan') {
+                $securityTeam = null;
+                $cycleStart = null;
+            }
+
+            User::create([
+                'name' => $name,
+                'username' => $username,
+                'password' => Hash::make($password),
+                'email' => $email ?: null,
+                'role' => $role,
+                'nip' => $nip ?: null,
+                'nik' => $nik ?: null,
+                'jabatan' => $jabatan,
+                'unit' => $unit ?: null,
+                'phone' => $phone ?: null,
+                'address' => $address ?: null,
+                'annual_leave_quota' => $leaveQuota,
+                'annual_leave_remaining' => $leaveQuota,
+                'security_team' => $securityTeam ?: null,
+                'security_cycle_start_date' => $cycleStart ?: null,
+            ]);
+
+            $imported++;
+        }
+
+        $message = "$imported user berhasil diimpor.";
+        if (! empty($errors)) {
+            $message .= ' ' . count($errors) . ' baris gagal: ' . implode('; ', array_slice($errors, 0, 10));
+            if (count($errors) > 10) $message .= ' (dan ' . (count($errors) - 10) . ' lainnya)';
+        }
+
+        return redirect()->route('admin.users.index')->with('status', $message);
+    }
+
     private function validatedData(Request $request, ?User $user = null): array
     {
         $userId = $user?->id;
@@ -107,5 +323,4 @@ class AdminUserController extends Controller
 
         return $data;
     }
-
 }
