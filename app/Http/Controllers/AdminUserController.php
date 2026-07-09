@@ -96,8 +96,9 @@ class AdminUserController extends Controller
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ];
 
+        $colLetters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N'];
         foreach ($headers as $i => $header) {
-            $sheet->setCellValueByColumnAndRow($i + 1, 1, $header);
+            $sheet->setCellValue($colLetters[$i] . '1', $header);
         }
         $sheet->getRowDimension(1)->setRowHeight(22);
         $sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
