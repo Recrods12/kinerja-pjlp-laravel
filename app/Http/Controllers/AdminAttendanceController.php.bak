@@ -100,14 +100,13 @@ class AdminAttendanceController extends Controller
     public function exportMonthly(Request $request)
     {
         set_time_limit(120);
-
         $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
         $yearNumber = (int) $request->query('year', now()->year);
         $month = Carbon::create($yearNumber, $monthNumber, 1)->startOfMonth();
         $monthEnd = $month->copy()->endOfMonth();
 
         $users = User::query()
-            ->select('id', 'name', 'nip', 'nik', 'jabatan')
+            ->select('id', 'name', 'nip', 'nik', 'jabatan', 'role')
             ->where('role', 'pjlp')
             ->orderBy('name')
             ->get();
@@ -159,11 +158,24 @@ class AdminAttendanceController extends Controller
             echo '<table>';
             echo '<tr><td class="title" colspan="12">Rekap Absensi Bulanan PJLP ' . e($monthLabel) . '</td></tr>';
             echo '<tr>';
-            echo '<th>No</th><th>Nama Pegawai</th><th>NIP PJLP</th><th>NIK</th><th>Jabatan / Bidang</th>';
-            echo '<th>Tanggal</th><th>Absen Awal</th><th>Absen Akhir</th><th>Dinas Luar</th><th>Status</th><th>Lokasi Terakhir</th><th>Catatan / Tujuan</th>';
+            echo '<th>No</th>';
+            echo '<th>Nama Pegawai</th>';
+            echo '<th>NIP PJLP</th>';
+            echo '<th>NIK</th>';
+            echo '<th>Jabatan / Bidang</th>';
+            echo '<th>Tanggal</th>';
+            echo '<th>Absen Awal</th>';
+            echo '<th>Absen Akhir</th>';
+            echo '<th>Dinas Luar</th>';
+            echo '<th>Status</th>';
+            echo '<th>Lokasi Terakhir</th>';
+            echo '<th>Catatan / Tujuan</th>';
             echo '</tr>';
 
             $index = 0;
+            $total = count($users) * count($days);
+            $batch = 0;
+
             foreach ($users as $user) {
                 foreach ($days as $day) {
                     $index++;
@@ -210,8 +222,9 @@ class AdminAttendanceController extends Controller
                     echo '<td class="start">' . e($note) . '</td>';
                     echo '</tr>';
 
-                    // Flush buffer every 300 rows
-                    if ($index % 300 === 0) {
+                    // Flush every 200 rows
+                    $batch++;
+                    if ($batch % 200 === 0 && $index < $total) {
                         ob_flush();
                         flush();
                     }
@@ -314,6 +327,7 @@ class AdminAttendanceController extends Controller
     private function attendanceRows(Carbon $date, string $search)
     {
         $users = User::query()
+            ->select('id', 'name', 'nip', 'nik', 'jabatan', 'role')
             ->where('role', 'pjlp')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
