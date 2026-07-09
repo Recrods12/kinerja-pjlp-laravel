@@ -156,8 +156,8 @@
         <div class="notice">{{ session('status') }}</div>
       @endif
       @if (session('import_errors'))
-        <div class="notice import-error-notice">
-          <span>{{ count(session('import_errors')) }} baris gagal. <button type="button" onclick="var p=this.parentElement.parentElement;p.nextElementSibling.style.display='block';this.style.display='none'" style="background:none;border:none;color:inherit;text-decoration:underline;cursor:pointer;padding:0;font:inherit">Detail</button></span>
+        <div class="notice error-notice">
+          <span>{{ count(session('import_errors')) }} baris gagal. <button type="button" onmouseover="this.style.background='#ffe0e0'" onmouseout="this.style.background='#fff3f3'" onclick="var p=this.parentElement.parentElement;p.nextElementSibling.style.display='block';this.style.display='none'" style="background:#fff3f3;border:1px solid #cc4444;color:#cc0000;font-weight:600;cursor:pointer;padding:2px 10px;font-size:13px;border-radius:4px;margin-left:6px">Lihat Detail</button></span>
         </div>
         <div class="import-error-detail" style="display:none;margin:-12px 0 16px;padding:8px 16px;background:#fff3f3;border:1px solid #e0b4b4;border-radius:6px;font-size:13px">
           <ul style="margin:0;padding-left:20px">
