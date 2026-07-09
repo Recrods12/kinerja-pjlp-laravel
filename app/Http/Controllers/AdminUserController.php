@@ -197,6 +197,7 @@ class AdminUserController extends Controller
 
         $jobRoles = ['Driver', 'Kebersihan', 'Keamanan', 'Mekanikal Enginer', 'Pelayanan Umum', 'PJLP', 'Admin'];
         $imported = 0;
+        $skipped = 0;
         $errors = [];
 
         foreach ($rows as $index => $row) {
@@ -209,6 +210,19 @@ class AdminUserController extends Controller
 
             $name = trim((string) ($row[0] ?? ''));
             $username = trim((string) ($row[1] ?? ''));
+            $firstCell = strtolower($name);
+
+            // Skip baris petunjuk / contoh / bukan data user
+            if (
+                str_starts_with($firstCell, 'petunjuk') ||
+                str_starts_with($firstCell, '- ') ||
+                str_starts_with($firstCell, 'contoh:') ||
+                $name === ''
+            ) {
+                $skipped++;
+                continue;
+            }
+
             $password = (string) ($row[2] ?? '');
             $email = trim((string) ($row[3] ?? ''));
             $role = strtolower(trim((string) ($row[4] ?? '')));
@@ -237,7 +251,7 @@ class AdminUserController extends Controller
             if ($leaveQuota <= 0) $leaveQuota = 12;
 
             if (! empty($rowErrors)) {
-                $errors[] = "Baris $rowNum ($name): " . implode('; ', $rowErrors);
+                $errors[] = $name ?: "Baris $rowNum";
                 continue;
             }
 
@@ -276,10 +290,13 @@ class AdminUserController extends Controller
             $imported++;
         }
 
-        $message = "$imported user berhasil diimpor.";
+        // Build short message
+        $message = $imported > 0 ? "$imported user berhasil diimpor." : 'Tidak ada user yang diimpor.';
+        if ($skipped > 0) {
+            $message .= " $skipped baris petunjuk dilewati.";
+        }
         if (! empty($errors)) {
-            $message .= ' ' . count($errors) . ' baris gagal: ' . implode('; ', array_slice($errors, 0, 10));
-            if (count($errors) > 10) $message .= ' (dan ' . (count($errors) - 10) . ' lainnya)';
+            $message .= ' ' . count($errors) . ' baris gagal.';
         }
 
         return redirect()->route('admin.users.index')->with('status', $message);
