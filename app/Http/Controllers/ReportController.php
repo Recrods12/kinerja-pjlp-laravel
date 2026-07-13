@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use AppModelsReportJob;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -342,4 +343,164 @@ class ReportController extends Controller
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
             ->all();
     }
+
+    /* ===== EXPORT BULANAN LAPORAN KINERJA (ASYNC) ===== */
+
+    /**
+     * Tampilkan halaman progress export laporan kinerja.
+     */
+    public function showPerformanceExport(Request $request)
+    {
+        $monthNumber = max(1, min(12, (int) $request->query("month", now()->month)));
+        $yearNumber = (int) $request->query("year", now()->year);
+
+        return view("admin.reports.export-progress", [
+            "month" => $monthNumber,
+            "year" => $yearNumber,
+        ]);
+    }
+
+    /**
+     * Mulai export laporan kinerja via AJAX.
+     */
+    public function startPerformanceExport(Request $request)
+    {
+        $monthNumber = max(1, min(12, (int) $request->input("month", now()->month)));
+        $yearNumber = (int) $request->input("year", now()->year);
+
+        $users = User::query()
+            ->where("role", "pjlp")
+            ->orderBy("name")
+            ->get();
+
+        if ($users->isEmpty()) {
+            return response()->json(["status" => "failed", "message" => "Tidak ada user PJLP."], 400);
+        }
+
+        $reportJob = ReportJob::create([
+            "user_id" => Auth::id(),
+            "type" => "monthly_performance",
+            "status" => "pending",
+            "total_users" => $users->count(),
+            "processed_users" => 0,
+            "month" => $monthNumber,
+            "year" => $yearNumber,
+            "current_user_name" => null,
+        ]);
+
+        return response()->json([
+            "status" => "started",
+            "report_job_id" => $reportJob->id,
+            "total_users" => $reportJob->total_users,
+        ]);
+    }
+
+    /**
+     * Proses 1 user untuk ReportJob (laporan kinerja) via AJAX.
+     */
+    public function processPerformanceStep(ReportJob $reportJob, Request $request)
+    {
+        if ($reportJob->isFinished()) {
+            return response()->json([
+                "status" => $reportJob->status,
+                "progress" => $reportJob->progressPercent(),
+                "message" => $reportJob->status === "completed" ? "Selesai! ZIP siap diunduh." : "Gagal.",
+            ]);
+        }
+
+        if ($reportJob->processed_users >= $reportJob->total_users) {
+            $reportJob->update(["status" => "completed", "current_user_name" => null]);
+            return response()->json([
+                "status" => "completed",
+                "progress" => 100,
+                "message" => "Selesai! ZIP siap diunduh.",
+            ]);
+        }
+
+        $month = Carbon::create($reportJob->year, $reportJob->month, 1)->startOfMonth();
+        $processed = $reportJob->processed_users;
+
+        $users = User::query()
+            ->where("role", "pjlp")
+            ->orderBy("name")
+            ->get();
+
+        $user = $users->skip($processed)->first();
+        if (!$user) {
+            $reportJob->update(["status" => "failed", "error_message" => "User tidak ditemukan."]);
+            return response()->json(["status" => "failed", "progress" => $reportJob->progressPercent(), "message" => "Gagal: user tidak ditemukan."]);
+        }
+
+        $reportJob->update(["status" => "processing", "current_user_name" => $user->name]);
+
+        try {
+            set_time_limit(30);
+
+            $reportPages = $this->reportPagesForMonth($user, $month);
+
+            if (empty($reportPages)) {
+                $reportJob->increment("processed_users");
+                $reportJob->update(["status" => $reportJob->processed_users >= $reportJob->total_users ? "completed" : "processing", "current_user_name" => null]);
+                return response()->json([
+                    "status" => $reportJob->status,
+                    "progress" => $reportJob->progressPercent(),
+                    "current_user" => null,
+                    "processed_users" => $reportJob->processed_users,
+                    "total_users" => $reportJob->total_users,
+                ]);
+            }
+
+            $zipPath = $reportJob->zip_path;
+            $zipName = $reportJob->zip_name;
+
+            if (!$zipPath) {
+                $directory = storage_path("app/report-zips");
+                if (!is_dir($directory)) {
+                    mkdir($directory, 0775, true);
+                }
+                $monthLabel = $month->translatedFormat("F-Y");
+                $zipName = "laporan-kinerja-" . Str::slug($monthLabel) . "-" . now()->format("YmdHis") . ".zip";
+                $zipPath = $directory . DIRECTORY_SEPARATOR . $zipName;
+                $reportJob->update(["zip_path" => $zipPath, "zip_name" => $zipName]);
+            }
+
+            $zip = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
+                throw new RuntimeException("Gagal membuka ZIP.");
+            }
+
+            $pdf = Pdf::loadView("reports.pdf", [
+                "target" => $user,
+                "approver" => $this->approverForReport(Auth::user()),
+                "reportPages" => $reportPages,
+            ])->setPaper("a4", "landscape");
+
+            $userName = $user->name ?: $user->username;
+            $monthLabel = $month->translatedFormat("F");
+            $fileName = $userName . " - kinerja " . $monthLabel . ".pdf";
+            $zip->addFromString($fileName, $pdf->output());
+            $zip->close();
+
+            $reportJob->increment("processed_users");
+
+            $isCompleted = $reportJob->processed_users >= $reportJob->total_users;
+            if ($isCompleted) {
+                $reportJob->update(["status" => "completed", "current_user_name" => null]);
+            } else {
+                $reportJob->update(["status" => "processing", "current_user_name" => null]);
+            }
+
+            return response()->json([
+                "status" => $isCompleted ? "completed" : "processing",
+                "progress" => $reportJob->progressPercent(),
+                "current_user" => null,
+                "processed_users" => $reportJob->processed_users,
+                "total_users" => $reportJob->total_users,
+            ]);
+        } catch (Exception $e) {
+            $reportJob->update(["status" => "failed", "error_message" => $e->getMessage()]);
+            return response()->json(["status" => "failed", "message" => $e->getMessage()]);
+        }
+    }
+
 }
