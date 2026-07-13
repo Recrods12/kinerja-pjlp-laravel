@@ -73,7 +73,7 @@
           {{ $pastMonthsEditable ? '❌ Nonaktifkan' : '✏️ Izinkan' }} Edit Bulan Lalu
         </button>
       </form>
-      <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download Bulanan</a>
+      <a class="primary-action" href="{{ route('admin.attendance.exportMonthly', ['month' => $month->month, 'year' => $month->year]) }}">Download Bulanan</a>
     </div>
   </section>
 
@@ -243,7 +243,7 @@
             <span>Pantau hadir, dinas luar, izin, dan alfa</span>
           </span>
         </a>
-        <a class="quick-card green" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">
+        <a class="quick-card green" href="{{ route('admin.attendance.exportMonthly', ['month' => $month->month, 'year' => $month->year]) }}">
           <span class="quick-icon">📄</span>
           <span class="quick-text">
             <strong>Download PDF</strong>
@@ -294,7 +294,7 @@
         <p class="muted">Pantau pengisian kinerja PJLP pada bulan {{ $monthLabel }}.</p>
       </div>
       <div class="admin-toolbar">
-        <a class="primary-action" href="{{ route('admin.reports.downloadZip', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Download Bulanan</a>
+        <a class="primary-action" href="{{ route('admin.attendance.exportMonthly', ['month' => $month->month, 'year' => $month->year]) }}">Download Bulanan</a>
         <a class="ghost-action" href="{{ route('admin.export.csv', array_merge($activeFilters, ['month' => $month->month, 'year' => $month->year])) }}">Export Excel</a>
         <a class="ghost-action" href="{{ route('admin.holidays.index') }}">Kelola Libur</a>
         <div class="month-nav">
