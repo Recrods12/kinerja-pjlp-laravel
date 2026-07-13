@@ -46,9 +46,10 @@
 @push('scripts')
 <script>
 (function() {
-  const reportJobId = {{ $reportJob->id }};
-  const stepUrl = '{{ route('admin.report-jobs.step', $reportJob) }}';
   const csrfToken = '{{ csrf_token() }}';
+  const month = {{ $month }};
+  const year = {{ $year }};
+  let reportJobId = @json($reportJob?->id);
   let polling = true;
 
   function updateProgress(percent, message, sub) {
@@ -76,9 +77,9 @@
   }
 
   function processStep() {
-    if (!polling) return;
+    if (!polling || !reportJobId) return;
 
-    fetch(stepUrl, {
+    fetch('/admin/report-jobs/' + reportJobId + '/step', {
       method: 'POST',
       headers: {
         'X-CSRF-TOKEN': csrfToken,
@@ -90,8 +91,7 @@
     .then(data => {
       if (data.status === 'completed') {
         updateProgress(100, 'Selesai!', '');
-        const downloadUrl = '{{ route('admin.report-jobs.download', $reportJob) }}';
-        showDone(downloadUrl);
+        showDone('/admin/report-jobs/' + reportJobId + '/download');
         return;
       }
 
@@ -103,7 +103,7 @@
       // Masih pending/processing
       const progress = data.progress || 0;
       const msg = data.current_user ? 'Memproses: ' + data.current_user : 'Memproses...';
-      const sub = data.processed_users + ' dari ' + data.total_users + ' user selesai';
+      const sub = (data.processed_users || 0) + ' dari ' + (data.total_users || 0) + ' user selesai';
       updateProgress(progress, msg, sub);
 
       // Lanjut polling setelah jeda
@@ -115,8 +115,40 @@
     });
   }
 
-  // Mulai
-  setTimeout(processStep, 300);
+  function startExport() {
+    fetch('/admin/export-bulanan/start', {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': csrfToken,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ month: month, year: year }),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'failed') {
+        showError(data.message || 'Gagal memulai export.');
+        return;
+      }
+      reportJobId = data.report_job_id;
+      updateProgress(0, 'Memulai export...', '0 dari ' + data.total_users + ' user');
+      setTimeout(processStep, 500);
+    })
+    .catch(err => {
+      console.error('Start export error:', err);
+      showError('Gagal terhubung ke server.');
+    });
+  }
+
+  // Jika belum ada reportJob, mulai export dulu
+  if (!reportJobId) {
+    updateProgress(0, 'Menyiapkan data...', '');
+    startExport();
+  } else {
+    // Sudah ada reportJob — polling langsung
+    setTimeout(processStep, 300);
+  }
 })();
 </script>
 @endpush

@@ -104,12 +104,27 @@ class AdminAttendanceController extends Controller
     /* ===== EXPORT BULANAN (ASYNC) ===== */
 
     /**
-     * Mulai export bulanan secara async — buat ReportJob, redirect ke halaman progress.
+     * Tampilkan halaman progress export langsung.
      */
     public function exportMonthly(Request $request)
     {
         $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
         $yearNumber = (int) $request->query('year', now()->year);
+
+        return view('admin.attendance.export-progress', [
+            'month' => $monthNumber,
+            'year' => $yearNumber,
+            'reportJob' => null,
+        ]);
+    }
+
+    /**
+     * Mulai export baru via AJAX POST.
+     */
+    public function startExport(Request $request)
+    {
+        $monthNumber = max(1, min(12, (int) $request->input('month', now()->month)));
+        $yearNumber = (int) $request->input('year', now()->year);
 
         $users = User::query()
             ->select('id', 'name', 'nip', 'nik', 'jabatan')
@@ -118,7 +133,7 @@ class AdminAttendanceController extends Controller
             ->get();
 
         if ($users->isEmpty()) {
-            return back()->withErrors(['export' => 'Tidak ada user PJLP.']);
+            return response()->json(['status' => 'failed', 'message' => 'Tidak ada user PJLP.'], 400);
         }
 
         $reportJob = ReportJob::create([
@@ -132,15 +147,10 @@ class AdminAttendanceController extends Controller
             'current_user_name' => null,
         ]);
 
-        return redirect()->route('admin.report-jobs.show', $reportJob);
-    }
-
-    /* ===== REPORT JOB (ASYNC EXPORT) ===== */
-
-    public function showReportJob(ReportJob $reportJob)
-    {
-        return view('admin.attendance.export-progress', [
-            'reportJob' => $reportJob,
+        return response()->json([
+            'status' => 'started',
+            'report_job_id' => $reportJob->id,
+            'total_users' => $reportJob->total_users,
         ]);
     }
 
