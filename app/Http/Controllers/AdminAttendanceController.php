@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceRecord;
 use App\Models\LeaveRequest;
+use App\Models\ReportJob;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
 
 class AdminAttendanceController extends Controller
 {
@@ -98,28 +101,15 @@ class AdminAttendanceController extends Controller
         }, $fileName, ['Content-Type' => 'application/vnd.ms-excel; charset=UTF-8']);
     }
 
+    /* ===== EXPORT BULANAN (ASYNC) ===== */
+
     /**
-     * Export rekap absensi bulanan — tulis ke file storage dulu, lalu redirect ke link download.
+     * Mulai export bulanan secara async — buat ReportJob, redirect ke halaman progress.
      */
     public function exportMonthly(Request $request)
     {
         $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
         $yearNumber = (int) $request->query('year', now()->year);
-        $month = Carbon::create($yearNumber, $monthNumber, 1)->startOfMonth();
-        $monthEnd = $month->copy()->endOfMonth();
-
-        $fileName = 'rekap-absensi-bulanan-' . $month->format('Y-m') . '.xls';
-
-        // Gunakan file session-based, unik per user
-        $sessionKey = 'export_' . md5($fileName . auth()->id());
-        $filePath = storage_path("app/exports/{$sessionKey}.xls");
-
-        // Jika file sudah ada dan masih fresh (< 5 menit), langsung kirim
-        if (file_exists($filePath) && time() - filemtime($filePath) < 300) {
-            return response()->download($filePath, $fileName, [
-                'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
-            ]);
-        }
 
         $users = User::query()
             ->select('id', 'name', 'nip', 'nik', 'jabatan')
@@ -127,126 +117,223 @@ class AdminAttendanceController extends Controller
             ->orderBy('name')
             ->get();
 
-        $allRecords = AttendanceRecord::query()
-            ->select('id', 'user_id', 'work_date', 'type', 'recorded_at', 'latitude', 'longitude', 'address', 'note')
-            ->whereDate('work_date', '>=', $month)
-            ->whereDate('work_date', '<=', $monthEnd)
-            ->get()
-            ->groupBy(fn ($r) => $r->user_id . '|' . $r->work_date->toDateString());
+        if ($users->isEmpty()) {
+            return back()->withErrors(['export' => 'Tidak ada user PJLP.']);
+        }
 
-        $allLeaves = LeaveRequest::query()
-            ->select('id', 'user_id', 'start_date', 'end_date', 'reason')
-            ->where('status', LeaveRequest::STATUS_APPROVED)
-            ->whereDate('start_date', '<=', $monthEnd)
-            ->whereDate('end_date', '>=', $month)
+        $reportJob = ReportJob::create([
+            'user_id' => Auth::id(),
+            'type' => 'monthly_attendance',
+            'status' => 'pending',
+            'total_users' => $users->count(),
+            'processed_users' => 0,
+            'month' => $monthNumber,
+            'year' => $yearNumber,
+            'current_user_name' => null,
+        ]);
+
+        return redirect()->route('admin.report-jobs.show', $reportJob);
+    }
+
+    /* ===== REPORT JOB (ASYNC EXPORT) ===== */
+
+    public function showReportJob(ReportJob $reportJob)
+    {
+        return view('admin.attendance.export-progress', [
+            'reportJob' => $reportJob,
+        ]);
+    }
+
+    /**
+     * Proses 1 user untuk ReportJob via AJAX.
+     */
+    public function processStep(ReportJob $reportJob, Request $request)
+    {
+        if ($reportJob->isFinished()) {
+            return response()->json([
+                'status' => $reportJob->status,
+                'progress' => $reportJob->progressPercent(),
+                'message' => $reportJob->status === 'completed' ? 'Selesai! ZIP siap diunduh.' : 'Gagal.',
+            ]);
+        }
+
+        if ($reportJob->processed_users >= $reportJob->total_users) {
+            $reportJob->update(['status' => 'completed', 'current_user_name' => null]);
+            return response()->json([
+                'status' => 'completed',
+                'progress' => 100,
+                'message' => 'Selesai! ZIP siap diunduh.',
+            ]);
+        }
+
+        $month = Carbon::create($reportJob->year, $reportJob->month, 1)->startOfMonth();
+        $monthEnd = $month->copy()->endOfMonth();
+        $processed = $reportJob->processed_users;
+
+        $users = User::query()
+            ->select('id', 'name', 'nip', 'nik', 'jabatan')
+            ->where('role', 'pjlp')
+            ->orderBy('name')
             ->get();
 
-        $leaveDates = [];
-        foreach ($allLeaves as $leave) {
-            $period = CarbonPeriod::create($leave->start_date, $leave->end_date);
-            foreach ($period as $d) {
-                $leaveDates[$leave->user_id][$d->toDateString()] = true;
+        $user = $users->skip($processed)->first();
+        if (!$user) {
+            $reportJob->update(['status' => 'failed', 'error_message' => 'User tidak ditemukan.']);
+            return response()->json(['status' => 'failed', 'progress' => $reportJob->progressPercent(), 'message' => 'Gagal: user tidak ditemukan.']);
+        }
+
+        $reportJob->update(['status' => 'processing', 'current_user_name' => $user->name]);
+
+        try {
+            set_time_limit(30);
+
+            // Ambil data untuk user ini saja — ringan
+            $records = AttendanceRecord::query()
+                ->select('id', 'user_id', 'work_date', 'type', 'recorded_at', 'latitude', 'longitude', 'address', 'note')
+                ->where('user_id', $user->id)
+                ->whereDate('work_date', '>=', $month)
+                ->whereDate('work_date', '<=', $monthEnd)
+                ->get()
+                ->groupBy(fn ($r) => $r->user_id . '|' . $r->work_date->toDateString());
+
+            $leaves = LeaveRequest::query()
+                ->where('status', LeaveRequest::STATUS_APPROVED)
+                ->where('user_id', $user->id)
+                ->whereDate('start_date', '<=', $monthEnd)
+                ->whereDate('end_date', '>=', $month)
+                ->get(['user_id', 'start_date', 'end_date']);
+
+            $leaveDates = [];
+            foreach ($leaves as $leave) {
+                $period = CarbonPeriod::create($leave->start_date, $leave->end_date);
+                foreach ($period as $d) {
+                    $leaveDates[$d->toDateString()] = true;
+                }
             }
-        }
-        unset($allLeaves);
 
-        $days = [];
-        for ($d = 1; $d <= $month->daysInMonth; $d++) {
-            $date = Carbon::create($yearNumber, $monthNumber, $d);
-            if (!$date->isWeekend()) {
-                $days[] = $date;
+            $days = [];
+            for ($d = 1; $d <= $month->daysInMonth; $d++) {
+                $date = Carbon::create($reportJob->year, $reportJob->month, $d);
+                if (!$date->isWeekend()) {
+                    $days[] = $date;
+                }
             }
-        }
 
-        $monthLabel = $this->monthLabel($month);
+            $monthLabel = $this->monthLabel($month);
 
-        // Tulis ke file pakai buffered write (hemat memory)
-        $handle = fopen($filePath, 'w');
-        if (!$handle) {
-            return back()->withErrors(['export' => 'Gagal membuat file export.']);
-        }
+            $html = '<!doctype html><html><head><meta charset="utf-8">';
+            $html .= '<style>
+                table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 10px; }
+                th { background: #dff6e8; font-weight: bold; text-align: center; }
+                th, td { border: 1px solid #333; padding: 3px 4px; vertical-align: top; }
+                .center { text-align: center; }
+                .start { mso-number-format:"\@"; white-space: normal; }
+            </style></head><body>';
+            $html .= '<table>';
+            $html .= '<tr><th>No</th><th>Nama Pegawai</th><th>NIP PJLP</th><th>NIK</th><th>Jabatan / Bidang</th>';
+            $html .= '<th>Tanggal</th><th>Absen Awal</th><th>Absen Akhir</th><th>Dinas Luar</th><th>Status</th><th>Lokasi Terakhir</th><th>Catatan / Tujuan</th></tr>';
 
-        $write = function ($line) use ($handle) {
-            fwrite($handle, $line . "\n");
-        };
-
-        $write('<!doctype html><html><head><meta charset="utf-8">');
-        $write('<style>
-            table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; }
-            th { background: #dff6e8; font-weight: bold; text-align: center; }
-            th, td { border: 1px solid #333; padding: 4px 5px; vertical-align: top; }
-            .center { text-align: center; }
-            .start { mso-number-format:"\@"; white-space: normal; }
-            .title { font-size: 14px; font-weight: bold; border: 0; padding: 6px 0; }
-        </style></head><body>');
-        $write('<table>');
-        $write('<tr><td class="title" colspan="12">Rekap Absensi Bulanan PJLP ' . e($monthLabel) . '</td></tr>');
-        $write('<tr>');
-        $write('<th>No</th><th>Nama Pegawai</th><th>NIP PJLP</th><th>NIK</th><th>Jabatan / Bidang</th>');
-        $write('<th>Tanggal</th><th>Absen Awal</th><th>Absen Akhir</th><th>Dinas Luar</th><th>Status</th><th>Lokasi Terakhir</th><th>Catatan / Tujuan</th>');
-        $write('</tr>');
-
-        $index = 0;
-        foreach ($users as $user) {
-            foreach ($days as $day) {
-                $index++;
+            foreach ($days as $index => $day) {
                 $dateStr = $day->toDateString();
                 $key = $user->id . '|' . $dateStr;
-                $dayRecords = isset($allRecords[$key]) ? $allRecords[$key]->keyBy('type') : collect();
-                $isLeave = isset($leaveDates[$user->id][$dateStr]);
+                $dayRecords = isset($records[$key]) ? $records[$key]->keyBy('type') : collect();
+                $isLeave = isset($leaveDates[$dateStr]);
 
                 $start = $dayRecords->get(AttendanceRecord::TYPE_START);
                 $end = $dayRecords->get(AttendanceRecord::TYPE_END);
                 $field = $dayRecords->get(AttendanceRecord::TYPE_FIELD);
                 $latest = $field ?: ($end ?: $start);
 
-                if ($isLeave) {
-                    $statusLabel = 'Izin / Sakit';
-                } elseif ($field) {
-                    $statusLabel = 'Dinas Luar';
-                } elseif ($end) {
-                    $statusLabel = 'Hadir';
-                } elseif ($start) {
-                    $statusLabel = 'Belum Lengkap';
-                } else {
-                    $statusLabel = 'Alfa';
-                }
+                $statusLabel = match (true) {
+                    $isLeave => 'Izin / Sakit',
+                    (bool) $field => 'Dinas Luar',
+                    (bool) $end => 'Hadir',
+                    (bool) $start => 'Belum Lengkap',
+                    default => 'Alfa',
+                };
 
                 $note = $field?->note ?: ($latest?->note ?: '-');
                 $location = $latest
                     ? ($latest->address ?: ($latest->latitude ? 'Lat ' . $latest->latitude . ', Lng ' . $latest->longitude : '-'))
                     : '-';
 
-                $write('<tr>');
-                $write('<td class="center">' . $index . '</td>');
-                $write('<td>' . e($user->name) . '</td>');
-                $write('<td class="center start">' . e($user->nip ?: '-') . '</td>');
-                $write('<td class="center start">' . e($user->nik ?: '-') . '</td>');
-                $write('<td>' . e($user->jabatan ?: 'PJLP') . '</td>');
-                $write('<td class="center">' . e($day->translatedFormat('l, d F Y')) . '</td>');
-                $write('<td class="center">' . ($start ? e($start->recorded_at->format('H:i')) . ' WIB' : '-') . '</td>');
-                $write('<td class="center">' . ($end ? e($end->recorded_at->format('H:i')) . ' WIB' : '-') . '</td>');
-                $write('<td class="center">' . ($field ? e($field->recorded_at->format('H:i')) . ' WIB' : '-') . '</td>');
-                $write('<td class="center">' . e($statusLabel) . '</td>');
-                $write('<td class="start">' . e($location) . '</td>');
-                $write('<td class="start">' . e($note) . '</td>');
-                $write('</tr>');
+                $html .= '<tr>';
+                $html .= '<td class="center">' . ($index + 1) . '</td>';
+                $html .= '<td>' . e($user->name) . '</td>';
+                $html .= '<td class="center start">' . e($user->nip ?: '-') . '</td>';
+                $html .= '<td class="center start">' . e($user->nik ?: '-') . '</td>';
+                $html .= '<td>' . e($user->jabatan ?: 'PJLP') . '</td>';
+                $html .= '<td class="center">' . e($day->translatedFormat('d F Y')) . '</td>';
+                $html .= '<td class="center">' . ($start ? e($start->recorded_at->format('H:i')) . ' WIB' : '-') . '</td>';
+                $html .= '<td class="center">' . ($end ? e($end->recorded_at->format('H:i')) . ' WIB' : '-') . '</td>';
+                $html .= '<td class="center">' . ($field ? e($field->recorded_at->format('H:i')) . ' WIB' : '-') . '</td>';
+                $html .= '<td class="center">' . e($statusLabel) . '</td>';
+                $html .= '<td class="start">' . e($location) . '</td>';
+                $html .= '<td class="start">' . e($note) . '</td>';
+                $html .= '</tr>';
             }
+
+            $html .= '</table></body></html>';
+
+            // Simpan ke ZIP
+            $zipDir = storage_path('app/exports');
+            if (!is_dir($zipDir)) {
+                mkdir($zipDir, 0775, true);
+            }
+            $zipPath = $zipDir . '/rekap-absensi-bulanan-' . $month->format('Y-m') . '.zip';
+            $zip = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
+                throw new \RuntimeException('Gagal membuka ZIP.');
+            }
+            $userFileName = $user->name . ' - ' . $monthLabel . '.xls';
+            $zip->addFromString($userFileName, $html);
+            $zip->close();
+
+            $newProcessed = $processed + 1;
+            $finished = $newProcessed >= $reportJob->total_users;
+            $reportJob->update([
+                'processed_users' => $newProcessed,
+                'status' => $finished ? 'completed' : 'pending',
+                'current_user_name' => $finished ? null : $user->name,
+            ]);
+
+            if ($finished) {
+                $reportJob->update([
+                    'zip_path' => $zipPath,
+                    'zip_name' => 'rekap-absensi-bulanan-' . $month->format('Y-m') . '.zip',
+                ]);
+            }
+
+            return response()->json([
+                'status' => $finished ? 'completed' : 'pending',
+                'progress' => $reportJob->progressPercent(),
+                'current_user' => $user->name,
+                'processed_users' => $reportJob->processed_users,
+                'total_users' => $reportJob->total_users,
+                'message' => $finished ? 'Selesai! ZIP siap diunduh.' : $user->name . ' selesai diproses.',
+            ]);
+        } catch (\Throwable $e) {
+            $reportJob->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => 'failed',
+                'progress' => $reportJob->progressPercent(),
+                'message' => 'Gagal: ' . $e->getMessage(),
+            ]);
         }
-
-        $write('</table></body></html>');
-        fclose($handle);
-
-        return response()->download($filePath, $fileName, [
-            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
-        ])->deleteFileAfterSend(true);
     }
 
-    private function monthLabel(Carbon $date): string
+    public function downloadReportZip(ReportJob $reportJob)
     {
-        $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
-        return $monthNames[$date->month] . ' ' . $date->year;
+        abort_unless($reportJob->status === 'completed' && $reportJob->zip_path && file_exists($reportJob->zip_path), 404);
+
+        return response()->download($reportJob->zip_path, $reportJob->zip_name)->deleteFileAfterSend(true);
     }
+
+    /* ===== SHOW / EDIT / UPDATE ===== */
 
     public function show(AttendanceRecord $attendanceRecord)
     {
@@ -331,6 +418,8 @@ class AdminAttendanceController extends Controller
         return $request->file('selfie')->store('attendance-selfies', 'public');
     }
 
+    /* ===== HELPERS ===== */
+
     private function attendanceRows(Carbon $date, string $search)
     {
         $users = User::query()
@@ -396,6 +485,12 @@ class AdminAttendanceController extends Controller
             'alfa' => 'Alfa',
             'belum_lengkap' => 'Belum Lengkap',
         ];
+    }
+
+    private function monthLabel(Carbon $date): string
+    {
+        $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+        return $monthNames[$date->month] . ' ' . $date->year;
     }
 
     private function dateLabel(Carbon $date): string

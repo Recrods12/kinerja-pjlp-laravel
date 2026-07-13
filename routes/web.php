@@ -55,6 +55,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/absensi', [AdminAttendanceController::class, 'index'])->name('admin.attendance.index');
         Route::get('/admin/absensi/export-excel', [AdminAttendanceController::class, 'exportExcel'])->name('admin.attendance.exportExcel');
         Route::get('/admin/absensi/export-bulanan', [AdminAttendanceController::class, 'exportMonthly'])->name('admin.attendance.exportMonthly');
+        Route::get('/admin/report-jobs/{reportJob}', [AdminAttendanceController::class, 'showReportJob'])->name('admin.report-jobs.show');
+        Route::post('/admin/report-jobs/{reportJob}/step', [AdminAttendanceController::class, 'processStep'])->name('admin.report-jobs.step');
+        Route::get('/admin/report-jobs/{reportJob}/download', [AdminAttendanceController::class, 'downloadReportZip'])->name('admin.report-jobs.download');
         Route::get('/admin/absensi/{attendanceRecord}/edit', [AdminAttendanceController::class, 'edit'])->name('admin.attendance.edit');
         Route::put('/admin/absensi/{attendanceRecord}', [AdminAttendanceController::class, 'update'])->name('admin.attendance.update');
         Route::get('/admin/absensi/{attendanceRecord}', [AdminAttendanceController::class, 'show'])->name('admin.attendance.show');
