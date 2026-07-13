@@ -51,7 +51,12 @@
       <p class="muted">Pantau kehadiran pegawai secara real-time pada {{ $dateLabel }}.</p>
     </div>
     <div class="page-actions">
-      <a class="primary-action" href="{{ route('admin.attendance.exportMonthly', ['month' => $date->month, 'year' => $date->year]) }}">Download Bulanan</a>
+      <form method="POST" action="{{ route('admin.attendance.exportMonthly') }}" style="display:inline">
+        @csrf
+        <input type="hidden" name="month" value="{{ $date->month }}">
+        <input type="hidden" name="year" value="{{ $date->year }}">
+        <button type="submit" class="primary-action">Download Bulanan</button>
+      </form>
       <a class="ghost-action attendance-export-action" href="{{ route('admin.attendance.exportExcel', array_filter(['date' => $date->toDateString(), 'status' => $status, 'search' => $search], fn ($value) => filled($value))) }}">Export Harian</a>
       <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
       <form class="inline-date-form" method="get" action="{{ route('admin.attendance.index') }}">
