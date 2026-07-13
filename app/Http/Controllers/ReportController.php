@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use AppModelsReportJob;
+use App\Models\ReportJob;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
