@@ -61,9 +61,9 @@ class AdminExportController extends Controller
             </style>';
             echo '</head><body>';
             echo '<table>';
-            echo '<tr><td class="title" colspan="8">Rekap Kinerja PJLP Bulan ' . e($month->translatedFormat('F Y')) . '</td></tr>';
+            echo '<tr><td class="title" colspan="9">Rekap Kinerja PJLP Bulan ' . e($month->translatedFormat('F Y')) . '</td></tr>';
             echo '<tr>';
-            foreach (['Nama', 'NIP PJLP', 'Jabatan', 'Tanggal', 'Hari', 'Jam Kerja', 'Uraian Tugas', 'Keterangan'] as $heading) {
+            foreach (['Nama', 'NIP PJLP', 'Jabatan', 'Tanggal', 'Hari', 'Jam Mulai', 'Jam Selesai', 'Uraian Tugas', 'Keterangan'] as $heading) {
                 echo '<th>' . e($heading) . '</th>';
             }
             echo '</tr>';
@@ -75,7 +75,8 @@ class AdminExportController extends Controller
                 echo '<td>' . e($entry->user->jabatan) . '</td>';
                 echo '<td class="center">' . e($entry->work_date->translatedFormat('d F Y')) . '</td>';
                 echo '<td class="center">' . e($entry->work_date->translatedFormat('l')) . '</td>';
-                echo '<td class="center">' . e($entry->work_time) . '</td>';
+                echo '<td class="center">' . e($entry->work_start_time ?: $entry->work_time) . '</td>';
+                echo '<td class="center">' . e($entry->work_end_time) . '</td>';
                 echo '<td class="wrap">' . e($entry->task) . '</td>';
                 echo '<td>' . e($entry->note) . '</td>';
                 echo '</tr>';

@@ -31,7 +31,7 @@ class ReportController extends Controller
                 'leftDate' => $leftDate,
                 'rightDate' => $rightDate,
                 'leftEntries' => $this->entriesForDate($target, $leftDate),
-                'rightEntries' => $this->entriesForDate($target, $rightDate),
+                'rightEntries' => $rightDate ? $this->entriesForDate($target, $rightDate) : collect(),
             ]];
 
         return view('reports.show', [

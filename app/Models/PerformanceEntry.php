@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['user_id', 'work_date', 'work_time', 'task', 'note', 'sort_order'])]
+#[Fillable(['user_id', 'work_date', 'work_time', 'work_start_time', 'work_end_time', 'task', 'note', 'sort_order'])]
 class PerformanceEntry extends Model
 {
     protected function casts(): array

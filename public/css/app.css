@@ -924,9 +924,14 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 }
 
 .task-row {
-  display: grid; grid-template-columns: 96px 1fr 140px 76px; gap: 10px; align-items: start;
+  display: grid; grid-template-columns: 96px 1fr 100px 76px; gap: 10px; align-items: start;
   padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.5);
 }
+.time-group {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.time-group label { display: flex; flex-direction: column; gap: 4px; }
+.time-group input { width: 100%; }
 .profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .full-width { grid-column: 1 / -1; }
 .holiday-sync-form {
@@ -1911,9 +1916,9 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
 .report-table th, .report-table td { border: 1px solid #1d2623; height: 28px; padding: 3px 5px; text-align: center; vertical-align: middle; overflow: hidden; }
 .report-table th { text-align: center; font-size: 9px; height: 22px; }
 .report-table .no-col { width: 36px; text-align: center; }
-.report-table .time-col { width: 72px; }
-.report-table .note-col { width: 92px; }
-.report-table td:nth-child(3) { text-align: left; }
+.report-table .time-col { width: 54px; }
+.report-table .note-col { width: 44px; }
+.report-table td:nth-child(4) { text-align: left; }
 .report-task-text { display: block; max-height: 1.2em; overflow: hidden; line-height: 1.15; white-space: nowrap; font-size: 12px; }
 .signature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; margin-top: 22px; text-align: center; font-size: 11px; }
 .signature-block { min-height: 104px; display: flex; flex-direction: column; justify-content: space-between; }
@@ -2548,16 +2553,16 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
     width: 9mm;
   }
   .report-table .time-col {
-    width: 21mm;
+    width: 14mm;
   }
   .report-table .note-col {
-    width: 19mm;
+    width: 11mm;
   }
   .report-table td:nth-child(2) {
     white-space: nowrap;
     font-size: 8px;
   }
-  .report-table td:nth-child(3) {
+  .report-table td:nth-child(4) {
     text-align: left;
   }
   .report-task-text {

@@ -15,6 +15,10 @@ class PerformanceEntryController extends Controller
             'work_date' => ['required', 'date'],
             'work_time' => ['array'],
             'work_time.*' => ['nullable', 'string', 'max:50'],
+            'work_start_time' => ['array'],
+            'work_start_time.*' => ['nullable', 'string', 'max:50'],
+            'work_end_time' => ['array'],
+            'work_end_time.*' => ['nullable', 'string', 'max:50'],
             'task' => ['array'],
             'task.*' => ['nullable', 'string'],
             'note' => ['array'],
@@ -39,15 +43,19 @@ class PerformanceEntryController extends Controller
         foreach (($data['task'] ?? []) as $index => $task) {
             $task = trim((string) $task);
             $workTime = trim((string) ($data['work_time'][$index] ?? ''));
+            $workStartTime = trim((string) ($data['work_start_time'][$index] ?? ''));
+            $workEndTime = trim((string) ($data['work_end_time'][$index] ?? ''));
             $note = trim((string) ($data['note'][$index] ?? ''));
 
-            if ($task === '' && $workTime === '' && $note === '') {
+            if ($task === '' && $workTime === '' && $workStartTime === '' && $workEndTime === '' && $note === '') {
                 continue;
             }
 
             $user->performanceEntries()->create([
                 'work_date' => $date,
                 'work_time' => $workTime,
+                'work_start_time' => $workStartTime,
+                'work_end_time' => $workEndTime,
                 'task' => $task,
                 'note' => $note,
                 'sort_order' => $index + 1,

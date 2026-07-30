@@ -19,6 +19,8 @@
 
           $printRows[] = [
               'work_time' => $lineIndex === 0 ? $entry->work_time : '',
+              'work_start_time' => $lineIndex === 0 ? $entry->work_start_time : '',
+              'work_end_time' => $lineIndex === 0 ? $entry->work_end_time : '',
               'task' => $taskLine,
               'note' => $lineIndex === 0 ? $entry->note : '',
           ];
@@ -30,17 +32,19 @@
   <thead>
     <tr>
       <th class="no-col">NO</th>
-      <th class="time-col">JAM KERJA</th>
+      <th class="time-col">MULAI</th>
+      <th class="time-col">SELESAI</th>
       <th>URAIAN TUGAS</th>
-      <th class="note-col">KETERANGAN</th>
+      <th class="note-col">KET</th>
     </tr>
   </thead>
   <tbody>
     @for ($i = 0; $i < $maxRows; $i++)
-      @php $row = $printRows[$i] ?? ['work_time' => '', 'task' => '', 'note' => '']; @endphp
+      @php $row = $printRows[$i] ?? ['work_time' => '', 'work_start_time' => '', 'work_end_time' => '', 'task' => '', 'note' => '']; @endphp
       <tr>
         <td class="no-col">{{ $i + 1 }}</td>
-        <td>{{ $row['work_time'] }}</td>
+        <td>{{ $row['work_start_time'] ?: $row['work_time'] }}</td>
+        <td>{{ $row['work_end_time'] }}</td>
         <td><span class="report-task-text">{{ $row['task'] }}</span></td>
         <td>{{ $row['note'] }}</td>
       </tr>

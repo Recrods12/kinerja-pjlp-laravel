@@ -7,7 +7,7 @@
   $holidayDateSet = array_flip($holidayDates);
   $workDateSet = array_flip($workDates);
   $today = now()->startOfDay();
-  $rows = $entries->count() ? $entries : collect([(object) ['work_time' => '', 'task' => '', 'note' => '']]);
+  $rows = $entries->count() ? $entries : collect([(object) ['work_start_time' => '', 'work_end_time' => '', 'task' => '', 'note' => '']]);
   $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
   $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   $shortDayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -103,10 +103,16 @@
         <div class="task-list" id="task-list">
           @foreach ($rows as $row)
             <div class="task-row">
-              <label>
-                <span>Jam Kerja</span>
-                <input name="work_time[]" value="{{ old('work_time.' . $loop->index, $row->work_time) }}" placeholder="08.00">
-              </label>
+              <div class="time-group">
+                <label>
+                  <span>Jam Mulai</span>
+                  <input name="work_start_time[]" value="{{ old('work_start_time.' . $loop->index, $row->work_start_time) }}" placeholder="08.00">
+                </label>
+                <label>
+                  <span>Jam Selesai</span>
+                  <input name="work_end_time[]" value="{{ old('work_end_time.' . $loop->index, $row->work_end_time) }}" placeholder="09.00">
+                </label>
+              </div>
               <label>
                 <span>Uraian Tugas</span>
                 <textarea name="task[]" placeholder="Tuliskan kegiatan">{{ old('task.' . $loop->index, $row->task) }}</textarea>
@@ -313,7 +319,10 @@
     document.querySelector('#add-row').addEventListener('click', () => {
       list.insertAdjacentHTML('beforeend', `
         <div class="task-row">
-          <label><span>Jam Kerja</span><input name="work_time[]" placeholder="08.00"></label>
+          <div class="time-group">
+            <label><span>Jam Mulai</span><input name="work_start_time[]" placeholder="08.00"></label>
+            <label><span>Jam Selesai</span><input name="work_end_time[]" placeholder="09.00"></label>
+          </div>
           <label><span>Uraian Tugas</span><textarea name="task[]" placeholder="Tuliskan kegiatan"></textarea></label>
           <label><span>Keterangan</span><input name="note[]" placeholder="Selesai"></label>
           <button class="danger-action remove-row" type="button">Hapus</button>
