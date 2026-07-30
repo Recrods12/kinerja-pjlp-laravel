@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
+use App\Models\Notification;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -117,11 +119,23 @@ class LeaveRequestController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $user->leaveRequests()->create([
+            $leaveRequest = $user->leaveRequests()->create([
                 ...$data,
                 'total_days' => $totalDays,
                 'status' => LeaveRequest::STATUS_PENDING,
             ]);
+
+            // Notify admin
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'type' => 'leave_submitted',
+                    'title' => 'Pengajuan Cuti Baru',
+                    'body' => $user->name . ' mengajukan cuti ' . $leaveRequest->total_days . ' ' . $leaveRequest->duration_unit . ' (' . $leaveRequest->start_date->format('d/m/Y') . ' - ' . $leaveRequest->end_date->format('d/m/Y') . ').',
+                    'link' => route('admin.leave.show', $leaveRequest),
+                ]);
+            }
         });
 
         return redirect()
@@ -134,6 +148,17 @@ class LeaveRequestController extends Controller
         abort_unless($leaveRequest->user_id === $request->user()->id, 403);
 
         return view('leave.show', compact('leaveRequest'));
+    }
+
+    public function print(Request $request, LeaveRequest $leaveRequest): View
+    {
+        abort_unless($leaveRequest->user_id === $request->user()->id, 403);
+        abort_unless($leaveRequest->status === LeaveRequest::STATUS_APPROVED, 403);
+
+        $leaveRequest->load('user', 'approver');
+        $approver = $leaveRequest->approver;
+
+        return view('admin.leave.print', compact('leaveRequest', 'approver'));
     }
 
     private function buildCalendarDays(Carbon $month, $leaveRequests): array

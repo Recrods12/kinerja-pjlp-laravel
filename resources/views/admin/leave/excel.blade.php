@@ -32,8 +32,8 @@
           <tr>
             <td>{{ $loop->iteration }}</td>
             <td>{{ $leaveRequest->user->name }}</td>
-            <td>{{ $leaveRequest->user->nip ?: '-' }}</td>
-            <td>{{ $leaveRequest->user->nik ?: '-' }}</td>
+            <td style="mso-number-format:\@">{{ $leaveRequest->user->nip ?: '-' }}</td>
+            <td style="mso-number-format:\@">{{ $leaveRequest->user->nik ?: '-' }}</td>
             <td>{{ $leaveRequest->user->jabatan ?: 'PJLP' }}</td>
             <td>{{ $leaveRequest->start_date->format('d/m/Y') }}</td>
             <td>{{ $leaveRequest->end_date->format('d/m/Y') }}</td>

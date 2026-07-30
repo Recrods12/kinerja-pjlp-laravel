@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Models\User;
+use App\Models\Notification;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -157,6 +158,14 @@ class AdminLeaveRequestController extends Controller
                     'approved_by' => $request->user()->id,
                     'approved_at' => now(),
                 ]);
+
+                Notification::create([
+                    'user_id' => $leaveRequest->user_id,
+                    'type' => 'leave_approved',
+                    'title' => 'Cuti Disetujui',
+                    'body' => 'Pengajuan cuti ' . $leaveRequest->start_date->format('d/m/Y') . ' - ' . $leaveRequest->end_date->format('d/m/Y') . ' (' . $leaveRequest->total_days . ' ' . $leaveRequest->duration_unit . ') telah disetujui.',
+                    'link' => route('leave.show', $leaveRequest),
+                ]);
             });
         } catch (ValidationException $exception) {
             return back()->withErrors($exception->errors())->withInput();
@@ -184,6 +193,14 @@ class AdminLeaveRequestController extends Controller
                     'admin_note' => $data['admin_note'] ?? null,
                     'approved_by' => $request->user()->id,
                     'approved_at' => now(),
+                ]);
+
+                Notification::create([
+                    'user_id' => $leaveRequest->user_id,
+                    'type' => 'leave_rejected',
+                    'title' => 'Cuti Ditolak',
+                    'body' => 'Pengajuan cuti ' . $leaveRequest->start_date->format('d/m/Y') . ' - ' . $leaveRequest->end_date->format('d/m/Y') . ' (' . $leaveRequest->total_days . ' ' . $leaveRequest->duration_unit . ') ditolak.' . ($data['admin_note'] ? ' Alasan: ' . $data['admin_note'] : ''),
+                    'link' => route('leave.show', $leaveRequest),
                 ]);
             });
         } catch (ValidationException $exception) {
@@ -213,6 +230,37 @@ class AdminLeaveRequestController extends Controller
             ->get();
 
         $filename = 'data-cuti-'.now()->format('Ymd-His').'.xls';
+
+        return response()
+            ->view('admin.leave.excel', compact('leaveRequests'))
+            ->header('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
+    }
+
+    public function exportCalendar(Request $request): Response
+    {
+        $period = $request->query('period', 'monthly');
+        $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
+        $yearNumber = max(2020, min(2100, (int) $request->query('year', now()->year)));
+
+        if ($period === 'yearly') {
+            $start = Carbon::create($yearNumber, 1, 1)->startOfYear();
+            $end = $start->copy()->endOfYear();
+            $filename = 'cuti-tahunan-'.$yearNumber.'.xls';
+        } else {
+            $start = Carbon::create($yearNumber, $monthNumber, 1)->startOfMonth();
+            $end = $start->copy()->endOfMonth();
+            $filename = 'cuti-bulanan-'.$start->translatedFormat('F-Y').'.xls';
+        }
+
+        $leaveRequests = LeaveRequest::query()
+            ->with('user', 'approver')
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereDate('start_date', '<=', $end)
+            ->whereDate('end_date', '>=', $start)
+            ->orderBy('start_date')
+            ->orderBy('end_date')
+            ->get();
 
         return response()
             ->view('admin.leave.excel', compact('leaveRequests'))

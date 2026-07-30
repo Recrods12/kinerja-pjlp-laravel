@@ -40,21 +40,32 @@
       .pdf-meta-right {
         position: absolute;
         top: 0;
-        width: 120mm;
+        width: 132mm;
       }
       .pdf-meta-left { left: 0; }
-      .pdf-meta-right { left: 146mm; }
-      .pdf-meta-line {
+      .pdf-meta-right { left: 143mm; }
+      .pdf-meta-table {
+        border-collapse: collapse;
+        width: 132mm;
+      }
+      .pdf-meta-table tr {
         line-height: 4.7mm;
-        white-space: nowrap;
       }
-      .pdf-meta-label {
-        display: inline-block;
+      .pdf-meta-lbl {
         width: 22mm;
+        vertical-align: top;
+        padding: 0;
+        font-weight: normal;
       }
-      .pdf-meta-separator {
-        display: inline-block;
+      .pdf-meta-colon {
         width: 5mm;
+        vertical-align: top;
+        padding: 0;
+      }
+      .pdf-meta-val {
+        vertical-align: top;
+        padding: 0;
+        white-space: nowrap;
       }
       .pdf-table {
         position: absolute;
@@ -84,7 +95,7 @@
       .pdf-table .no-col { text-align: center; }
       .pdf-table .time-col { text-align: center; }
       .pdf-table .note-col { text-align: center; }
-      .pdf-table .task-col { text-align: left; }
+      .pdf-table th.task-col { text-align: center; }
       .pdf-task-text {
         display: block;
         width: 100%;
@@ -173,45 +184,52 @@
 
         <div class="pdf-meta">
           <div class="pdf-meta-left">
-            <div class="pdf-meta-line"><span class="pdf-meta-label">NAMA</span><span class="pdf-meta-separator">:</span><strong>{{ $targetName }}</strong></div>
-            <div class="pdf-meta-line"><span class="pdf-meta-label">HARI</span><span class="pdf-meta-separator">:</span>{{ $leftDate->translatedFormat('l') }}</div>
-            <div class="pdf-meta-line"><span class="pdf-meta-label">TANGGAL</span><span class="pdf-meta-separator">:</span>{{ $leftDate->translatedFormat('d F Y') }}</div>
+            <table class="pdf-meta-table">
+              <tr><td class="pdf-meta-lbl">NAMA</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val"><strong>{{ $targetName }}</strong></td></tr>
+              <tr><td class="pdf-meta-lbl">HARI</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $leftDate->translatedFormat('l') }}</td></tr>
+              <tr><td class="pdf-meta-lbl">TANGGAL</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $leftDate->translatedFormat('d F Y') }}</td></tr>
+            </table>
           </div>
           <div class="pdf-meta-right">
-            <div class="pdf-meta-line"><span class="pdf-meta-label">HARI</span><span class="pdf-meta-separator">:</span>{{ $rightDate ? $rightDate->translatedFormat('l') : '' }}</div>
-            <div class="pdf-meta-line"><span class="pdf-meta-label">TANGGAL</span><span class="pdf-meta-separator">:</span>{{ $rightDate ? $rightDate->translatedFormat('d F Y') : '' }}</div>
+            <table class="pdf-meta-table">
+              <tr><td class="pdf-meta-lbl">&nbsp;</td><td class="pdf-meta-colon">&nbsp;</td><td class="pdf-meta-val">&nbsp;</td></tr>
+              <tr><td class="pdf-meta-lbl">HARI</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('l') : '' }}</td></tr>
+              <tr><td class="pdf-meta-lbl">TANGGAL</td><td class="pdf-meta-colon">:</td><td class="pdf-meta-val">{{ $rightDate ? $rightDate->translatedFormat('d F Y') : '' }}</td></tr>
+            </table>
           </div>
         </div>
 
         @include('reports.pdf-table', ['items' => $page['leftEntries']->take(15)->values(), 'side' => 'left'])
         @include('reports.pdf-table', ['items' => $page['rightEntries']->take(15)->values(), 'side' => 'right'])
 
-        <div class="pdf-signature left">
-          <div class="pdf-signature-role">
-            Mengetahui,<br>
-            Kasubbag Umum Sekretariat<br>
-            Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
-            Provinsi DKI Jakarta
+        @if ($loop->last)
+          <div class="pdf-signature left">
+            <div class="pdf-signature-role">
+              Mengetahui,<br>
+              Kasubbag Umum Sekretariat<br>
+              Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
+              Provinsi DKI Jakarta
+            </div>
+            @if ($approverSignature)
+              <img class="pdf-signature-image" src="{{ $approverSignature }}" alt="Tanda tangan {{ $approverName }}">
+            @endif
+            <div class="pdf-signature-name">{{ $approverName }}</div>
+            <div class="pdf-signature-id">NIP. {{ $approverNip }}</div>
           </div>
-          @if ($approverSignature)
-            <img class="pdf-signature-image" src="{{ $approverSignature }}" alt="Tanda tangan {{ $approverName }}">
-          @endif
-          <div class="pdf-signature-name">{{ $approverName }}</div>
-          <div class="pdf-signature-id">NIP. {{ $approverNip }}</div>
-        </div>
 
-        <div class="pdf-signature right">
-          <div class="pdf-signature-role">
-            PJLP<br>
-            Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
-            Provinsi DKI Jakarta
+          <div class="pdf-signature right">
+            <div class="pdf-signature-role">
+              PJLP<br>
+              Dinas Tenaga Kerja, Transmigrasi dan Energi<br>
+              Provinsi DKI Jakarta
+            </div>
+            @if ($targetSignature)
+              <img class="pdf-signature-image" src="{{ $targetSignature }}" alt="Tanda tangan {{ $targetName }}">
+            @endif
+            <div class="pdf-signature-name">{{ $targetName }}</div>
+            <div class="pdf-signature-id">ID PJLP {{ $target->nip ?: '........................' }}</div>
           </div>
-          @if ($targetSignature)
-            <img class="pdf-signature-image" src="{{ $targetSignature }}" alt="Tanda tangan {{ $targetName }}">
-          @endif
-          <div class="pdf-signature-name">{{ $targetName }}</div>
-          <div class="pdf-signature-id">ID PJLP {{ $target->nip ?: '........................' }}</div>
-        </div>
+        @endif
       </section>
     @endforeach
   </body>

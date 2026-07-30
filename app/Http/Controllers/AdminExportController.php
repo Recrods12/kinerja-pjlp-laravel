@@ -71,7 +71,7 @@ class AdminExportController extends Controller
             foreach ($entries as $entry) {
                 echo '<tr>';
                 echo '<td>' . e($entry->user->name) . '</td>';
-                echo '<td class="center">' . e($entry->user->nip) . '</td>';
+                echo '<td class="center" style="mso-number-format:\\@">' . e($entry->user->nip) . '</td>';
                 echo '<td>' . e($entry->user->jabatan) . '</td>';
                 echo '<td class="center">' . e($entry->work_date->translatedFormat('d F Y')) . '</td>';
                 echo '<td class="center">' . e($entry->work_date->translatedFormat('l')) . '</td>';

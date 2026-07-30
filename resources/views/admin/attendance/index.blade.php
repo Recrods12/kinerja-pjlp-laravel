@@ -30,6 +30,17 @@
   $selectedLatest = $selectedRow['latestRecord'] ?? null;
   $selectedField = $selectedRecords->get(AttendanceRecord::TYPE_FIELD);
   $selectedLeave = $selectedRow['leave'] ?? null;
+
+  // Jabatan color mapping (sama dengan dashboard admin)
+  $jabatanColors = [
+    'Driver' => ['bg' => '#3b82f6'],
+    'Kebersihan' => ['bg' => '#0d6f4b'],
+    'Keamanan' => ['bg' => '#ef4444'],
+    'Mekanikal Enginer' => ['bg' => '#a855f7'],
+    'Pelayanan Umum' => ['bg' => '#e8a838'],
+  ];
+  $defaultJabatanColor = ['bg' => '#6b7b73'];
+  $jabatanColor = fn ($jabatan) => $jabatanColors[$jabatan] ?? $defaultJabatanColor;
 @endphp
 
 @section('content')
@@ -40,7 +51,8 @@
       <p class="muted">Pantau kehadiran pegawai secara real-time pada {{ $dateLabel }}.</p>
     </div>
     <div class="page-actions">
-      <a class="ghost-action attendance-export-action" href="{{ route('admin.attendance.exportExcel', array_filter(['date' => $date->toDateString(), 'status' => $status, 'search' => $search], fn ($value) => filled($value))) }}">Export Excel</a>
+      <a class="primary-action" href="{{ route('admin.attendance.exportMonthly', ['month' => $date->month, 'year' => $date->year]) }}">Download Bulanan</a>
+      <a class="ghost-action attendance-export-action" href="{{ route('admin.attendance.exportExcel', array_filter(['date' => $date->toDateString(), 'status' => $status, 'search' => $search], fn ($value) => filled($value))) }}">Export Harian</a>
       <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
       <form class="inline-date-form" method="get" action="{{ route('admin.attendance.index') }}">
         <input type="hidden" name="search" value="{{ $search }}">
@@ -52,11 +64,11 @@
     </div>
   </section>
 
-  <section class="attendance-kpi-grid">
-    <article class="attendance-kpi green"><i>HD</i><span>Hadir</span><strong>{{ $summary['hadir'] }}</strong><small>Awal + akhir</small></article>
-    <article class="attendance-kpi blue"><i>DL</i><span>Dinas Luar</span><strong>{{ $summary['dinas_luar'] }}</strong><small>Tugas lapangan</small></article>
-    <article class="attendance-kpi gold"><i>IZ</i><span>Izin / Sakit</span><strong>{{ $summary['izin'] }}</strong><small>Cuti disetujui</small></article>
-    <article class="attendance-kpi red"><i>AF</i><span>Alfa</span><strong>{{ $summary['alfa'] }}</strong><small>Belum absen</small></article>
+  <section class="summary-strip">
+    <article class="card stat modern-stat green"><i>HD</i><strong>{{ $summary['hadir'] }}</strong><span>Hadir</span><small>Awal + akhir absen</small></article>
+    <article class="card stat modern-stat blue"><i>DL</i><strong>{{ $summary['dinas_luar'] }}</strong><span>Dinas Luar</span><small>Tugas lapangan</small></article>
+    <article class="card stat modern-stat gold"><i>IZ</i><strong>{{ $summary['izin'] }}</strong><span>Izin / Sakit</span><small>Cuti disetujui</small></article>
+    <article class="card stat modern-stat red"><i>AF</i><strong>{{ $summary['alfa'] }}</strong><span>Alfa</span><small>Belum absen</small></article>
   </section>
 
   <section class="attendance-admin-board">
@@ -89,13 +101,13 @@
           <thead>
             <tr>
               <th>No</th>
-              <th>Nama Pegawai</th>
-              <th>Jabatan / Bidang</th>
+              <th>Pegawai</th>
+              <th>Jabatan</th>
               <th>Absen Awal</th>
               <th>Absen Akhir</th>
               <th>Dinas Luar</th>
               <th>Status</th>
-              <th>Lokasi Terakhir</th>
+              <th>Lokasi</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -119,13 +131,18 @@
               @endphp
               <tr class="{{ $selectedUser && $selectedUser->id === $user->id ? 'is-selected' : '' }}">
                 <td>{{ $loop->iteration }}</td>
-                <td>
+                <td class="admin-user-cell">
+                  @if ($user->avatar_path)
+                    <img class="admin-avatar" src="{{ asset('storage/' . $user->avatar_path) }}" alt="Foto {{ $user->name }}">
+                  @else
+                    <span class="admin-avatar" style="background: {{ $jabatanColor($user->jabatan ?: 'PJLP')['bg'] }}">{{ \Illuminate\Support\Str::substr($user->name, 0, 1) }}</span>
+                  @endif
                   <a class="attendance-user-link" href="{{ $detailUrl }}" title="Lihat detail absensi {{ $user->name }}">
                     <strong>{{ $user->name }}</strong>
                     <span>{{ $user->nip ?: '-' }}</span>
                   </a>
                 </td>
-                <td>{{ $user->jabatan ?: 'PJLP' }}</td>
+                <td><span class="muted">{{ $user->jabatan ?: 'PJLP' }}</span></td>
                 <td class="attendance-time-cell">
                   @if ($start)
                     <span class="time-check">&check;</span>{{ $start->recorded_at->format('H:i') }} WIB
@@ -178,13 +195,21 @@
     </article>
 
     <aside class="panel attendance-side-card">
-      <h2>Detail Pegawai</h2>
+      <div class="panel-header">
+        <div>
+          <h2>Detail Pegawai</h2>
+        </div>
+      </div>
       @if ($selectedUser)
         <div class="attendance-profile">
-          <div class="attendance-avatar">{{ strtoupper(substr($selectedUser->name, 0, 1)) }}</div>
+          @if ($selectedUser->avatar_path)
+            <img class="admin-avatar big" src="{{ asset('storage/' . $selectedUser->avatar_path) }}" alt="Foto {{ $selectedUser->name }}">
+          @else
+            <span class="admin-avatar big" style="background: {{ $jabatanColor($selectedUser->jabatan ?: 'PJLP')['bg'] }}">{{ strtoupper(substr($selectedUser->name, 0, 1)) }}</span>
+          @endif
           <div>
             <strong>{{ $selectedUser->name }}</strong>
-            <span>{{ $selectedUser->jabatan ?: 'PJLP' }}</span>
+            <span class="muted">{{ $selectedUser->jabatan ?: 'PJLP' }}</span>
           </div>
         </div>
 
@@ -215,7 +240,7 @@
         </div>
 
         @if ($selectedLatest)
-          <a class="primary-action full-action" href="{{ route('admin.attendance.show', $selectedLatest) }}">Lihat Riwayat</a>
+          <a class="primary-action full-action" href="{{ route('admin.attendance.show', $selectedLatest) }}">Lihat Riwayat Login</a>
         @endif
       @else
         <p class="muted">Belum ada pegawai yang sesuai filter.</p>

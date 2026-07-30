@@ -9,6 +9,7 @@
     </div>
     <div class="page-actions">
       <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
+      <a class="ghost-action" href="#" onclick="document.getElementById('importModal').classList.add('open'); return false;">Import Excel</a>
       <a class="primary-action" href="{{ route('admin.users.create') }}">Tambah User</a>
     </div>
   </div>
@@ -66,4 +67,31 @@
       </table>
     </div>
   </section>
+
+  {{-- Modal Import Excel --}}
+  <div class="modal-overlay" id="importModal" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Import User dari Excel</h3>
+        <button class="modal-close" onclick="document.getElementById('importModal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted">Upload file Excel dengan data user. Download template terlebih dahulu untuk melihat format yang benar.</p>
+        <div class="form-group" style="margin:16px 0">
+          <a class="primary-action" href="{{ route('admin.users.importTemplate') }}" target="_blank">📥 Download Template</a>
+        </div>
+        <form method="post" action="{{ route('admin.users.import') }}" enctype="multipart/form-data">
+          @csrf
+          <div class="form-group">
+            <label for="importFile">Pilih File Excel (.xlsx, .xls, .csv)</label>
+            <input type="file" name="file" id="importFile" accept=".xlsx,.xls,.csv" required>
+          </div>
+          <div class="form-actions" style="margin-top:16px">
+            <button type="submit" class="primary-action">🚀 Import</button>
+            <button type="button" class="ghost-action" onclick="document.getElementById('importModal').classList.remove('open')">Batal</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 @endsection

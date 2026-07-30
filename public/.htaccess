@@ -5,6 +5,12 @@
 
     RewriteEngine On
 
+    # Increase time limits for large exports
+    <IfModule litespeed>
+        RewriteRule .* - [E=noabort:1]
+        RewriteRule .* - [E=noconntimeout:1]
+    </IfModule>
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

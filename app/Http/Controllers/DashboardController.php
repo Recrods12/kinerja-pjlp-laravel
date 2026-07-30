@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PerformanceEntry;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,7 +21,8 @@ class DashboardController extends Controller
             return $this->admin($request);
         }
 
-        $selectedDate = $this->nextWorkdayForUser($user, Carbon::parse($request->query('date', now()->toDateString())));
+        $now = now()->startOfDay();
+        $selectedDate = $this->nextWorkdayForUser($user, Carbon::parse($request->query('date', $now->toDateString())));
         $month = Carbon::create(
             (int) $request->query('year', $selectedDate->year),
             (int) $request->query('month', $selectedDate->month),
@@ -32,6 +34,9 @@ class DashboardController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $canEdit = $month->isSameMonth($now) || Setting::isPastMonthsEditable();
+        $leaveDates = $this->approvedLeaveDatesForMonth($user->id, $month);
+
         return view('pjlp.dashboard', [
             'user' => $user,
             'selectedDate' => $selectedDate,
@@ -41,6 +46,8 @@ class DashboardController extends Controller
             'holidayDates' => $this->holidayDatesForMonth($month),
             'workDates' => $this->workDatesForMonth($user, $month),
             'stats' => $this->monthStats($user, $month),
+            'canEdit' => $canEdit,
+            'leaveDates' => $leaveDates,
             'leaveSummary' => [
                 'pending' => $user->leaveRequests()->where('status', LeaveRequest::STATUS_PENDING)->count(),
                 'approved' => $user->leaveRequests()->where('status', LeaveRequest::STATUS_APPROVED)->count(),
@@ -52,9 +59,15 @@ class DashboardController extends Controller
 
     private function admin(Request $request)
     {
-        $latestEntryDate = PerformanceEntry::query()->latest('work_date')->value('work_date');
-        $defaultMonth = $latestEntryDate ? Carbon::parse($latestEntryDate) : now();
+        $defaultMonth = now();
         $jobRoles = ['Driver', 'Kebersihan', 'Keamanan', 'Mekanikal Enginer', 'Pelayanan Umum'];
+        // Total user count per role (unfiltered) for filter badges
+        $roleTotalCounts = User::query()
+            ->where('role', 'pjlp')
+            ->selectRaw('COALESCE(NULLIF(jabatan, \'\'), \'Lainnya\') as jabatan, COUNT(*) as total')
+            ->groupBy('jabatan')
+            ->pluck('total', 'jabatan')
+            ->all();
         $selectedRole = $request->query('jabatan');
         $search = trim((string) $request->query('search', ''));
 
@@ -85,6 +98,7 @@ class DashboardController extends Controller
                 $user->work_dates = $this->workDatesForMonth($user, $month);
                 $user->stats = $this->monthStats($user, $month);
                 $user->entry_dates = $this->entryDatesForMonth($user->id, $month);
+                $user->leave_dates = $this->approvedLeaveDatesForMonth($user->id, $month);
                 $user->latest_entry_date = $user->performanceEntries()
                     ->whereBetween('work_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
                     ->latest('work_date')
@@ -128,6 +142,8 @@ class DashboardController extends Controller
                 ->latest()
                 ->limit(5)
                 ->get(),
+            'pastMonthsEditable' => Setting::isPastMonthsEditable(),
+            'roleTotalCounts' => $roleTotalCounts,
             'roleSummaries' => collect($jobRoles)->map(function (string $jobRole) use ($pjlpUsers) {
                 $users = $pjlpUsers->where('jabatan', $jobRole);
                 $done = $users->sum(fn (User $user) => $user->stats['done']);
@@ -146,7 +162,7 @@ class DashboardController extends Controller
 
     private function entryDatesForMonth(int $userId, Carbon $month): array
     {
-        return PerformanceEntry::query()
+        $entryDates = PerformanceEntry::query()
             ->where('user_id', $userId)
             ->whereBetween('work_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
             ->select('work_date')
@@ -154,6 +170,34 @@ class DashboardController extends Controller
             ->pluck('work_date')
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
             ->all();
+
+        // Also include approved leave dates as "done"
+        $leaveDates = LeaveRequest::query()
+            ->where('user_id', $userId)
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->where(function ($query) use ($month) {
+                $query
+                    ->whereBetween('start_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                    ->orWhereBetween('end_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()]);
+            })
+            ->get()
+            ->flatMap(fn ($leave) => $this->datesForLeaveRange($leave, $month))
+            ->all();
+
+        return array_values(array_unique(array_merge($entryDates, $leaveDates)));
+    }
+
+    private function datesForLeaveRange($leave, Carbon $month): array
+    {
+        $start = Carbon::parse($leave->start_date)->max($month->copy()->startOfMonth());
+        $end = Carbon::parse($leave->end_date)->min($month->copy()->endOfMonth());
+        $dates = [];
+
+        foreach (range(0, (int) $start->diffInDays($end)) as $i) {
+            $dates[] = $start->copy()->addDays($i)->toDateString();
+        }
+
+        return $dates;
     }
 
     private function monthStats(User $user, Carbon $month): array
@@ -217,4 +261,38 @@ class DashboardController extends Controller
             ->all();
     }
 
+    private function approvedLeaveDatesForMonth(int $userId, Carbon $month): array
+    {
+        $leaves = LeaveRequest::query()
+            ->where('user_id', $userId)
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->where('start_date', '<=', $month->copy()->endOfMonth())
+            ->where('end_date', '>=', $month->copy()->startOfMonth())
+            ->get(['start_date', 'end_date']);
+
+        $dates = [];
+
+        foreach ($leaves as $leave) {
+            $start = Carbon::parse($leave->start_date)->startOfDay();
+            $end = Carbon::parse($leave->end_date)->startOfDay();
+
+            foreach (range(0, $start->diffInDays($end)) as $i) {
+                $date = $start->copy()->addDays($i);
+                if ($date->greaterThanOrEqualTo($month->copy()->startOfMonth()) && $date->lessThanOrEqualTo($month->copy()->endOfMonth())) {
+                    $dates[] = $date->toDateString();
+                }
+            }
+        }
+
+        return $dates;
+    }
+
+    public function togglePastEditable(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $current = Setting::isPastMonthsEditable();
+        Setting::setValue('past_months_editable', $current ? 'false' : 'true');
+
+        $status = $current ? 'dinonaktifkan' : 'diaktifkan';
+        return back()->with('status', "Izin edit bulan lalu berhasil {$status}.");
+    }
 }

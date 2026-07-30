@@ -88,9 +88,22 @@ class AttendanceController extends Controller
             'recorded_at' => $now,
         ]);
 
+        // Notifikasi admin
+        $typeLabel = AttendanceRecord::labels()[$type];
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'attendance_' . $type,
+                'title' => $typeLabel . ' — ' . $user->name,
+                'body' => $user->name . ' melakukan ' . strtolower($typeLabel) . ' pada ' . $now->format('d/m/Y H:i') . ' WIB.',
+                'link' => route('admin.attendance.index'),
+            ]);
+        }
+
         return redirect()
             ->route('attendance.index')
-            ->with('status', AttendanceRecord::labels()[$type] . ' berhasil disimpan.');
+            ->with('status', $typeLabel . ' berhasil disimpan.');
     }
 
     public function show(Request $request, AttendanceRecord $attendanceRecord)
@@ -200,6 +213,18 @@ class AttendanceController extends Controller
             ]);
         }
 
+        if ($type === AttendanceRecord::TYPE_START && $records->has(AttendanceRecord::TYPE_END)) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Absen awal tidak bisa dibuat karena sudah ada absen akhir hari ini.',
+            ]);
+        }
+
+        if ($type === AttendanceRecord::TYPE_START && $now->hour >= 12) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Absen awal hanya bisa dilakukan sebelum pukul 12.00.',
+            ]);
+        }
+
         if ($type === AttendanceRecord::TYPE_END) {
             if ($now->hour < 12) {
                 throw ValidationException::withMessages([
@@ -212,12 +237,6 @@ class AttendanceController extends Controller
             if ($records->has(AttendanceRecord::TYPE_START) || $records->has(AttendanceRecord::TYPE_END)) {
                 throw ValidationException::withMessages([
                     'attendance' => 'Dinas luar tidak bisa dipilih karena sudah ada absen awal atau akhir hari ini.',
-                ]);
-            }
-
-            if ($now->hour >= 12) {
-                throw ValidationException::withMessages([
-                    'attendance' => 'Absen Dinas Luar hanya bisa dilakukan sebelum pukul 12.00.',
                 ]);
             }
         }
@@ -236,7 +255,7 @@ class AttendanceController extends Controller
             ],
             AttendanceRecord::TYPE_FIELD => [
                 'Dinas luar digunakan jika bertugas di luar kantor seharian.',
-                'Cukup absen satu kali sebelum pukul 12.00 dan isi tujuan tugas.',
+                'Cukup absen satu kali dan isi tujuan tugas. Mencakup absen awal dan akhir.',
             ],
             default => [],
         };

@@ -52,7 +52,7 @@
         <td class="no-col" width="7%" style="width: 7%;">{{ $i + 1 }}</td>
         <td class="time-col" width="8%" style="width: 8%;">{{ $row['work_start_time'] ?: $row['work_time'] }}</td>
         <td class="time-col" width="8%" style="width: 8%;">{{ $row['work_end_time'] }}</td>
-        <td class="task-col" width="65%" style="width: 65%;"><span class="pdf-task-text">{{ $row['task'] }}</span></td>
+        <td class="task-col" width="69%" style="width: 69%;"><span class="pdf-task-text">{{ $row['task'] }}</span></td>
         <td class="note-col" width="8%" style="width: 8%;">{{ $row['note'] }}</td>
       </tr>
     @endfor

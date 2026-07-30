@@ -6,6 +6,7 @@
   $entryDateSet = array_flip($entryDates);
   $holidayDateSet = array_flip($holidayDates);
   $workDateSet = array_flip($workDates);
+  $leaveDateSet = array_flip($leaveDates);
   $today = now()->startOfDay();
   $rows = $entries->count() ? $entries : collect([(object) ['work_start_time' => '', 'work_end_time' => '', 'task' => '', 'note' => '']]);
   $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
@@ -14,6 +15,10 @@
   $monthLabel = $monthNames[$month->month] . ' ' . $month->year;
   $selectedDateLabel = $selectedDate->format('d') . ' ' . $monthNames[$selectedDate->month] . ' ' . $selectedDate->year;
   $formatDate = fn ($date) => \Carbon\Carbon::parse($date)->format('d') . ' ' . $monthNames[\Carbon\Carbon::parse($date)->month] . ' ' . \Carbon\Carbon::parse($date)->year;
+  $timeAgo = function ($dateTime) {
+    if (! $dateTime) return '-';
+    return \Carbon\Carbon::parse($dateTime)->diffForHumans(['parts' => 1]);
+  };
 @endphp
 
 @section('content')
@@ -71,19 +76,21 @@
             $date = $month->copy()->day($day);
             $iso = $date->toDateString();
             $isWorkday = isset($workDateSet[$iso]);
-            $status = ! $isWorkday ? 'weekend' : ($date->greaterThan($today) ? 'future' : (isset($entryDateSet[$iso]) ? 'done' : 'missing'));
+            $isLeave = isset($leaveDateSet[$iso]);
+            $status = ! $isWorkday ? 'weekend' : ($isLeave ? 'cuti' : ($date->greaterThan($today) ? 'future' : (isset($entryDateSet[$iso]) ? 'done' : 'missing')));
           @endphp
           @if (! $isWorkday)
             <span class="day-cell {{ $status }}">{{ $day }}</span>
           @else
             <a class="day-cell {{ $status }} {{ $iso === $selectedDate->toDateString() ? 'selected' : '' }}"
-               href="{{ route('dashboard', ['date' => $iso, 'month' => $month->month, 'year' => $month->year]) }}">{{ $day }}</a>
+               href="{{ route('dashboard', ['date' => $iso, 'month' => $month->month, 'year' => $month->year]) }}">{{ $isLeave ? 'Cuti' : $day }}</a>
           @endif
         @endfor
       </div>
 
       <div class="legend">
         <span><i class="dot green"></i>Sudah diisi</span>
+        <span><i class="dot blue"></i>Cuti</span>
         <span><i class="dot red"></i>Belum diisi</span>
         <span><i class="dot gray"></i>Libur / belum berjalan</span>
       </div>
@@ -93,10 +100,28 @@
       <div class="panel-header">
         <div>
           <h2>Catatan {{ $selectedDateLabel }}</h2>
-          <p class="muted">Isi uraian tugas harian, lalu simpan. Baris kosong tidak akan disimpan.</p>
+          @if (isset($leaveDateSet[$selectedDate->toDateString()]))
+            <p class="muted">Tanggal ini adalah hari cuti yang sudah disetujui.</p>
+          @elseif ($canEdit)
+            <p class="muted">Isi uraian tugas harian, lalu simpan. Baris kosong tidak akan disimpan.</p>
+          @else
+            <p class="muted">Hanya dapat melihat — pengisian kinerja hanya untuk bulan berjalan.</p>
+          @endif
         </div>
       </div>
 
+      @if (isset($leaveDateSet[$selectedDate->toDateString()]))
+        <div class="task-list">
+          <div class="task-row" style="opacity:0.7; pointer-events:none;">
+            <label><span>Jam Kerja</span><input value="CUTI" disabled></label>
+            <label><span>Uraian Tugas</span><textarea disabled>CUTI</textarea></label>
+            <label><span>Keterangan</span><input value="CUTI" disabled></label>
+          </div>
+        </div>
+        <div class="actions-row">
+          <a class="ghost-action" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}">Lihat Laporan</a>
+        </div>
+      @elseif ($canEdit)
       <form method="post" action="{{ route('entries.store') }}" id="entry-form">
         @csrf
         <input type="hidden" name="work_date" value="{{ $selectedDate->toDateString() }}">
@@ -131,6 +156,22 @@
           <a class="ghost-action" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}">Lihat Laporan</a>
         </div>
       </form>
+      @else
+        <div class="task-list">
+          @forelse ($rows as $row)
+            <div class="task-row" style="opacity:0.7; pointer-events:none;">
+              <label><span>Jam Kerja</span><input value="{{ $row->work_time }}" disabled></label>
+              <label><span>Uraian Tugas</span><textarea disabled>{{ $row->task }}</textarea></label>
+              <label><span>Keterangan</span><input value="{{ $row->note }}" disabled></label>
+            </div>
+          @empty
+            <p class="muted" style="padding:16px 0;">Tidak ada catatan kinerja untuk tanggal ini.</p>
+          @endforelse
+        </div>
+        <div class="actions-row">
+          <a class="ghost-action" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}">Lihat Laporan</a>
+        </div>
+      @endif
     </section>
   </section>
 
@@ -145,15 +186,22 @@
       </div>
       <div class="mini-list">
         @forelse ($recentLeaveRequests as $leave)
+          @php
+            $leaveDays = $leave->total_days . ' ' . ($leave->duration_unit ?? 'hari');
+          @endphp
           <a class="mini-item" href="{{ route('leave.show', $leave) }}">
-            <span class="avatar small">C</span>
+            <span class="avatar small {{ $leave->status === 'approved' ? 'done' : ($leave->status === 'rejected' ? 'missing' : 'pending') }}">{{ \Illuminate\Support\Str::substr($leave->reason, 0, 1) }}</span>
             <span>
               <strong>{{ $leave->reason }}</strong>
               <small>{{ $formatDate($leave->start_date) }} - {{ $formatDate($leave->end_date) }}</small>
+              <span class="mini-preview">{{ $leaveDays }}</span>
             </span>
-            <em class="status-pill {{ $leave->status === 'approved' ? 'done' : ($leave->status === 'rejected' ? 'missing' : 'pending') }}">
-              {{ $leave->status === 'approved' ? 'Disetujui' : ($leave->status === 'rejected' ? 'Ditolak' : 'Menunggu') }}
-            </em>
+            <span class="mini-meta">
+              <em class="mini-time">{{ $timeAgo($leave->created_at) }}</em>
+              <em class="status-pill {{ $leave->status === 'approved' ? 'done' : ($leave->status === 'rejected' ? 'missing' : 'pending') }}">
+                {{ $leave->status === 'approved' ? 'Disetujui' : ($leave->status === 'rejected' ? 'Ditolak' : 'Menunggu') }}
+              </em>
+            </span>
           </a>
         @empty
           <p class="muted">Belum ada pengajuan cuti.</p>
@@ -169,11 +217,41 @@
         </div>
       </div>
       <div class="quick-grid">
-        <a class="quick-card green" href="{{ route('attendance.index') }}"><strong>Absen Mobile</strong><span>Absen awal, akhir, atau dinas luar</span></a>
-        <a class="quick-card green" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}"><strong>Lihat Laporan</strong><span>Preview kinerja tanggal ini</span></a>
-        <a class="quick-card gold" href="{{ route('leave.create') }}"><strong>Ajukan Cuti</strong><span>Buat pengajuan cuti baru</span></a>
-        <a class="quick-card blue" href="{{ route('leave.index') }}"><strong>Riwayat Cuti</strong><span>{{ $leaveSummary['approved'] ?? 0 }} disetujui, {{ $leaveSummary['rejected'] ?? 0 }} ditolak</span></a>
-        <a class="quick-card red" href="#entry-form"><strong>Isi Kinerja</strong><span>Simpan catatan harian</span></a>
+        <a class="quick-card green" href="{{ route('attendance.index') }}">
+          <span class="quick-icon">📋</span>
+          <span class="quick-text">
+            <strong>Absen Mobile</strong>
+            <span>Absen awal, akhir, atau dinas luar</span>
+          </span>
+        </a>
+        <a class="quick-card green" href="{{ route('reports.show', ['date' => $selectedDate->toDateString()]) }}">
+          <span class="quick-icon">📄</span>
+          <span class="quick-text">
+            <strong>Lihat Laporan</strong>
+            <span>Preview kinerja tanggal ini</span>
+          </span>
+        </a>
+        <a class="quick-card gold" href="{{ route('leave.create') }}">
+          <span class="quick-icon">✈️</span>
+          <span class="quick-text">
+            <strong>Ajukan Cuti</strong>
+            <span>Buat pengajuan cuti baru</span>
+          </span>
+        </a>
+        <a class="quick-card blue" href="{{ route('leave.index') }}">
+          <span class="quick-icon">📋</span>
+          <span class="quick-text">
+            <strong>Riwayat Cuti</strong>
+            <span>{{ $leaveSummary['approved'] ?? 0 }} disetujui, {{ $leaveSummary['rejected'] ?? 0 }} ditolak</span>
+          </span>
+        </a>
+        <a class="quick-card red" href="#entry-form">
+          <span class="quick-icon">✏️</span>
+          <span class="quick-text">
+            <strong>Isi Kinerja</strong>
+            <span>Simpan catatan harian</span>
+          </span>
+        </a>
       </div>
     </article>
   </section>

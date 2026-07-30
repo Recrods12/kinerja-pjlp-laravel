@@ -14,6 +14,7 @@
       <p class="muted">{{ $attendanceRecord->user->jabatan ?: 'PJLP' }} &middot; {{ $dateLabel }}</p>
     </div>
     <div class="page-actions">
+      <a class="ghost-action" href="{{ route('admin.attendance.edit', $attendanceRecord) }}">Edit</a>
       <a class="ghost-action" href="{{ route('admin.attendance.index', ['date' => $date->toDateString()]) }}">Kembali</a>
     </div>
   </section>

@@ -25,6 +25,7 @@ use Illuminate\Notifications\Notifiable;
     'phone',
     'address',
     'signature_path',
+    'avatar_path',
     'annual_leave_quota',
     'annual_leave_remaining',
     'password',
@@ -62,6 +63,11 @@ class User extends Authenticatable
     public function attendanceRecords()
     {
         return $this->hasMany(AttendanceRecord::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class)->latest();
     }
 
     public function usesSecurityShift(): bool
