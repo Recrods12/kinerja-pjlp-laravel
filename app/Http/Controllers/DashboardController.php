@@ -187,7 +187,7 @@ class DashboardController extends Controller
         return array_values(array_unique(array_merge($entryDates, $leaveDates)));
     }
 
-    private function datesForLeaveRange($leave, Carbon $month): array
+    private function datesForLeaveRange(\App\Models\LeaveRequest $leave, Carbon $month): array
     {
         $start = Carbon::parse($leave->start_date)->max($month->copy()->startOfMonth());
         $end = Carbon::parse($leave->end_date)->min($month->copy()->endOfMonth());
@@ -254,11 +254,16 @@ class DashboardController extends Controller
 
     private function holidayDatesForMonth(Carbon $month): array
     {
-        return Holiday::query()
-            ->whereBetween('holiday_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
-            ->pluck('holiday_date')
-            ->map(fn ($date) => Carbon::parse($date)->toDateString())
-            ->all();
+        try {
+            return Holiday::query()
+                ->whereBetween('holiday_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                ->pluck('holiday_date')
+                ->map(fn ($date) => Carbon::parse($date)->toDateString())
+                ->all();
+        } catch (\Exception $e) {
+            // If holidays table is missing or query fails, return empty list to avoid 500.
+            return [];
+        }
     }
 
     private function approvedLeaveDatesForMonth(int $userId, Carbon $month): array
