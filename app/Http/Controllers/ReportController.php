@@ -49,29 +49,33 @@ class ReportController extends Controller
         ]);
     }
 
-    public function downloadPdf(Request $request)
+    public function downloadPdf(Request $request, ?User $user = null)
     {
-        $user = Auth::user();
+        $viewer = Auth::user();
+        $target = $viewer->role === 'admin' ? $user : $viewer;
+
+        abort_if(! $target || $target->role !== 'pjlp', 404);
+
         $month = Carbon::create(
             (int) $request->query('year', now()->year),
             (int) $request->query('month', now()->month),
             1
         );
 
-        $reportPages = $this->reportPagesForMonth($user, $month);
+        $reportPages = $this->reportPagesForMonth($target, $month);
 
         if (empty($reportPages)) {
             return back()->withErrors(['download' => 'Tidak ada data kinerja untuk bulan ini.']);
         }
 
         $pdf = Pdf::loadView('reports.pdf', [
-            'target' => $user,
-            'approver' => $this->approverForReport($user),
+            'target' => $target,
+            'approver' => $this->approverForReport($viewer),
             'reportPages' => $reportPages,
         ])->setPaper('a4', 'landscape');
 
         $monthLabel = $month->translatedFormat('F-Y');
-        $fileName = $user->name . ' - kinerja ' . $monthLabel . '.pdf';
+        $fileName = $target->name . ' - kinerja ' . $monthLabel . '.pdf';
 
         return $pdf->download($fileName);
     }

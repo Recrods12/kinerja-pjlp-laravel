@@ -74,6 +74,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/admin/cuti/{leaveRequest}/setujui', [AdminLeaveRequestController::class, 'approve'])->name('admin.leave.approve');
         Route::post('/admin/cuti/{leaveRequest}/tolak', [AdminLeaveRequestController::class, 'reject'])->name('admin.leave.reject');
         Route::get('/admin/cuti/{leaveRequest}/cetak', [AdminLeaveRequestController::class, 'print'])->name('admin.leave.print');
+        Route::get('/admin/laporan/{user}/download-pdf', [ReportController::class, 'downloadPdf'])->name('admin.reports.downloadPdf');
         Route::get('/admin/laporan/download-zip', [ReportController::class, 'downloadZip'])->name('admin.reports.downloadZip');
         Route::get('/admin/export-csv', [AdminExportController::class, 'csv'])->name('admin.export.csv');
         Route::get('/admin/holidays', [AdminHolidayController::class, 'index'])->name('admin.holidays.index');
