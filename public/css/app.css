@@ -2833,9 +2833,10 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   .report-table .note-col {
     width: 11mm;
   }
-  .report-table td:nth-child(2) {
+  .report-table td:nth-child(2),
+  .report-table td:nth-child(3) {
     white-space: nowrap;
-    font-size: 8px;
+    font-size: 10px;
   }
   .report-table td:nth-child(4) {
     text-align: left;
