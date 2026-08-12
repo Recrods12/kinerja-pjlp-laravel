@@ -476,7 +476,7 @@ class ReportController extends Controller
 
             $zip = new ZipArchive();
             if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
-                throw new RuntimeException("Gagal membuka ZIP.");
+                throw new \RuntimeException("Gagal membuka ZIP.");
             }
 
             $pdf = Pdf::loadView("reports.pdf", [
@@ -507,7 +507,7 @@ class ReportController extends Controller
                 "processed_users" => $reportJob->processed_users,
                 "total_users" => $reportJob->total_users,
             ]);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $reportJob->update(["status" => "failed", "error_message" => $e->getMessage()]);
             return response()->json(["status" => "failed", "message" => $e->getMessage()]);
         }
