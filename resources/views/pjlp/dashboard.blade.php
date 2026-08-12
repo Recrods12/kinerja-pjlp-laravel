@@ -8,7 +8,7 @@
   $workDateSet = array_flip($workDates);
   $leaveDateSet = array_flip($leaveDates);
   $today = now()->startOfDay();
-  $rows = $entries->count() ? $entries : collect([(object) ['work_start_time' => '', 'work_end_time' => '', 'task' => '', 'note' => '']]);
+  $rows = $entries->count() ? $entries : collect([(object) ['work_start_time' => '', 'work_end_time' => '', 'work_time' => '', 'task' => '', 'note' => '']]);
   $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
   $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   $shortDayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
