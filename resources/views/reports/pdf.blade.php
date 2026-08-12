@@ -93,7 +93,8 @@
         font-weight: 700;
       }
       .pdf-table .no-col { text-align: center; }
-      .pdf-table .time-col { text-align: center; }
+      .pdf-table th.time-col { text-align: center; }
+      .pdf-table td.time-col { text-align: center; font-size: 10px; }
       .pdf-table .note-col { text-align: center; }
       .pdf-table th.task-col { text-align: center; }
       .pdf-task-text {
