@@ -12,7 +12,9 @@ class ProfileController extends Controller
 {
     public function edit()
     {
-        return view('profile.edit', ['user' => Auth::user()]);
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        return view('profile.edit', ['user' => $user]);
     }
 
     public function update(Request $request)
@@ -29,6 +31,7 @@ class ProfileController extends Controller
             'password' => ['nullable', 'confirmed', Password::min(6)],
         ]);
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if ($request->hasFile('avatar')) {

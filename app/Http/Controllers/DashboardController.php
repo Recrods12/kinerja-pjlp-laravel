@@ -16,6 +16,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        /** @var \App\Models\User|null $user */
 
         if ($user->role === 'admin') {
             return $this->admin($request);

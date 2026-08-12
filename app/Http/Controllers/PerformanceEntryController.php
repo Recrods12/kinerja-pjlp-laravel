@@ -26,6 +26,7 @@ class PerformanceEntryController extends Controller
         ]);
 
         $user = Auth::user();
+        /** @var \App\Models\User $user */
         $date = Carbon::parse($data['work_date'])->toDateString();
         $workDate = Carbon::parse($date);
         $now = now()->startOfDay();

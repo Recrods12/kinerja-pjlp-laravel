@@ -17,8 +17,9 @@ class ReportController extends Controller
 {
     public function show(Request $request, ?User $user = null)
     {
+        /** @var \App\Models\User|null $viewer */
         $viewer = Auth::user();
-        $target = $viewer->role === 'admin' ? $user : $viewer;
+        $target = $viewer?->role === 'admin' ? $user : $viewer;
 
         abort_if(! $target || $target->role !== 'pjlp', 404);
 
@@ -341,11 +342,16 @@ class ReportController extends Controller
 
     private function holidayDatesForMonth(Carbon $month): array
     {
-        return Holiday::query()
-            ->whereBetween('holiday_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
-            ->pluck('holiday_date')
-            ->map(fn ($date) => Carbon::parse($date)->toDateString())
-            ->all();
+        try {
+            return Holiday::query()
+                ->whereBetween('holiday_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                ->pluck('holiday_date')
+                ->map(fn ($date) => Carbon::parse($date)->toDateString())
+                ->all();
+        } catch (\Exception $e) {
+            // If holidays table is missing or query fails, return empty list to avoid 500.
+            return [];
+        }
     }
 
     /* ===== EXPORT BULANAN LAPORAN KINERJA (ASYNC) ===== */
