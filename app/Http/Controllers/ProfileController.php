@@ -120,28 +120,43 @@ class ProfileController extends Controller
 
     public function deleteAvatar(Request $request)
     {
+        error_log('=== DELETE AVATAR CALLED ===');
+        
         /** @var \App\Models\User|null $user */
         $user = $request->user();
+        
+        error_log('User: ' . ($user ? 'ID=' . $user->id : 'null'));
 
         if (!$user) {
+            error_log('No user, redirecting to login');
             return redirect()->route('login')->with('error', 'Tidak terautentikasi.');
         }
 
+        error_log('Avatar path: ' . ($user->avatar_path ?: 'empty'));
+        
         if ($user->avatar_path) {
             try {
-                // Delete file from storage
+                error_log('Attempting to delete: ' . $user->avatar_path);
+                
                 if (Storage::disk('public')->exists($user->avatar_path)) {
                     Storage::disk('public')->delete($user->avatar_path);
+                    error_log('File deleted from storage');
+                } else {
+                    error_log('File does not exist');
                 }
                 
-                // Update database
                 $user->update(['avatar_path' => null]);
+                error_log('Database updated');
             } catch (\Exception $e) {
+                error_log('ERROR: ' . $e->getMessage());
                 Log::error('Error deleting avatar for user ' . $user->id . ': ' . $e->getMessage());
                 return redirect()->route('profile.edit')->with('error', 'Gagal menghapus foto profil: ' . $e->getMessage());
             }
+        } else {
+            error_log('No avatar to delete');
         }
 
+        error_log('=== DELETE AVATAR SUCCESS ===');
         return redirect()->route('profile.edit')->with('status', 'Foto profil berhasil dihapus.');
     }
 }

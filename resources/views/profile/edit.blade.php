@@ -54,16 +54,13 @@
         <span>Upload Foto Profil</span>
         <input name="avatar" type="file" accept="image/jpeg,image/png,image/webp">
       </label>
-      <div>
-        <span style="display: block; margin-bottom: 7px; color: #33433d; font-size: 13px; font-weight: 800;">Preview</span>
+      <div class="profile-media-preview">
+        <span class="profile-media-preview-title">Preview</span>
         @if ($user->avatar_path)
           <div class="signature-preview-box">
             <img src="{{ asset('storage/' . $user->avatar_path) }}" alt="Foto {{ $user->name }}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 999px;">
           </div>
-          <form method="post" action="{{ route('profile.avatar.delete') }}" style="margin-top:8px;" onsubmit="return confirm('Yakin ingin menghapus foto profil?')">
-            @csrf
-            <button class="danger-action" type="submit">Hapus Foto Profil</button>
-          </form>
+          <button class="danger-action" type="submit" form="profile-avatar-delete" onclick="return confirm('Yakin ingin menghapus foto profil?')">Hapus Foto Profil</button>
         @else
           <p class="muted">Belum ada foto profil.</p>
         @endif
@@ -76,16 +73,13 @@
         <span>Upload Tanda Tangan</span>
         <input name="signature" type="file" accept="image/png,image/jpeg,image/webp">
       </label>
-      <div>
-        <span style="display: block; margin-bottom: 7px; color: #33433d; font-size: 13px; font-weight: 800;">Preview</span>
+      <div class="profile-media-preview">
+        <span class="profile-media-preview-title">Preview</span>
         @if ($user->signature_path)
           <div class="signature-preview-box">
             <img src="{{ asset('storage/' . $user->signature_path) }}" alt="Tanda tangan {{ $user->name }}">
           </div>
-          <form method="post" action="{{ route('profile.signature.delete') }}" style="margin-top:8px;" onsubmit="return confirm('Yakin ingin menghapus tanda tangan?')">
-            @csrf
-            <button class="danger-action" type="submit">Hapus Tanda Tangan</button>
-          </form>
+          <button class="danger-action" type="submit" form="profile-signature-delete" onclick="return confirm('Yakin ingin menghapus tanda tangan?')">Hapus Tanda Tangan</button>
         @else
           <p class="muted">Belum ada tanda tangan.</p>
         @endif
@@ -110,5 +104,17 @@
         <button class="primary-action" type="submit">Simpan Profil</button>
       </div>
     </form>
+
+    @if ($user->avatar_path)
+      <form id="profile-avatar-delete" method="post" action="{{ route('profile.avatar.delete') }}" hidden>
+        @csrf
+      </form>
+    @endif
+
+    @if ($user->signature_path)
+      <form id="profile-signature-delete" method="post" action="{{ route('profile.signature.delete') }}" hidden>
+        @csrf
+      </form>
+    @endif
   </section>
 @endsection

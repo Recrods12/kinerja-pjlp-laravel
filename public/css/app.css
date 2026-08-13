@@ -1008,6 +1008,21 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   max-height: 68px;
   object-fit: contain;
 }
+.profile-media-preview {
+  display: grid;
+  grid-template-columns: 220px max-content;
+  gap: 10px 14px;
+  align-items: center;
+}
+.profile-media-preview-title {
+  grid-column: 1 / -1;
+  color: #33433d;
+  font-size: 13px;
+  font-weight: 800;
+}
+.profile-media-preview .danger-action {
+  white-space: nowrap;
+}
 .table-wrap { overflow: auto; }
 .admin-table { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 0; }
 .admin-table th, .admin-table td { border-bottom: 1px solid var(--line); padding: 13px 12px; text-align: left; vertical-align: top; }
@@ -2320,6 +2335,8 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
     border-radius: 14px;
   }
   .dashboard-grid, .summary-strip, .profile-grid, .detail-grid, .approval-grid, .settings-grid, .holiday-sync-form { grid-template-columns: 1fr; }
+  .profile-media-preview { grid-template-columns: 1fr; }
+  .profile-media-preview .danger-action { justify-self: start; }
   .attendance-grid { grid-template-columns: 1fr; }
   .attendance-hero {
     align-items: flex-start;
