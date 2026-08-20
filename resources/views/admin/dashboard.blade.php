@@ -348,6 +348,7 @@
             <th>PJLP</th>
             <th>NIP PJLP</th>
             <th>Jabatan</th>
+            <th>Sisa Cuti</th>
             <th>Progres</th>
             <th>%</th>
             <th>Terakhir Isi</th>
@@ -374,6 +375,10 @@
               </td>
               <td>{{ $person->nip ?: '-' }}</td>
               <td><span class="muted">{{ $person->jabatan ?: 'PJLP' }}</span></td>
+              <td>
+                <strong>{{ $person->annual_leave_remaining ?? $person->annual_leave_quota ?? 0 }}</strong>
+                / {{ $person->annual_leave_quota ?? 0 }} hari
+              </td>
               <td class="admin-progress-cell">
                 <div class="admin-progress-bar">
                   <i style="width: {{ $pct }}%; background: {{ $barColor }}"></i>
@@ -391,7 +396,7 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="7">Tidak ada data PJLP yang cocok.</td></tr>
+            <tr><td colspan="8">Tidak ada data PJLP yang cocok.</td></tr>
           @endforelse
         </tbody>
       </table>
