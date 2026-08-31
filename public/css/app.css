@@ -995,7 +995,8 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   margin-top: 3px;
 }
 .signature-preview-box {
-  width: 220px;
+  width: 100%;
+  min-width: 0;
   height: 86px;
   display: grid;
   place-items: center;
@@ -1004,15 +1005,16 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   background: rgba(255,255,255,.74);
 }
 .signature-preview-box img {
-  max-width: 190px;
+  max-width: calc(100% - 20px);
   max-height: 68px;
   object-fit: contain;
 }
 .profile-media-preview {
   display: grid;
-  grid-template-columns: 220px max-content;
-  gap: 10px 14px;
+  grid-template-columns: minmax(130px, 1fr) minmax(130px, auto);
+  gap: 10px;
   align-items: center;
+  min-width: 0;
 }
 .profile-media-preview-title {
   grid-column: 1 / -1;
@@ -1021,7 +1023,13 @@ a.day-cell:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,
   font-weight: 800;
 }
 .profile-media-preview .danger-action {
-  white-space: nowrap;
+  width: 100%;
+  min-width: 0;
+  padding-inline: 10px;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: normal;
+  text-align: center;
 }
 .table-wrap { overflow: auto; }
 .admin-table { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 0; }
