@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -110,6 +111,20 @@ class AdminAttendanceController extends Controller
             'month' => $monthNumber,
             'year' => $yearNumber,
             'reportJob' => null,
+            'format' => 'zip',
+        ]);
+    }
+
+    public function exportMonthlyAll(Request $request)
+    {
+        $monthNumber = max(1, min(12, (int) $request->query('month', now()->month)));
+        $yearNumber = (int) $request->query('year', now()->year);
+
+        return view('admin.attendance.export-progress', [
+            'month' => $monthNumber,
+            'year' => $yearNumber,
+            'reportJob' => null,
+            'format' => 'workbook',
         ]);
     }
 
@@ -120,6 +135,7 @@ class AdminAttendanceController extends Controller
     {
         $monthNumber = max(1, min(12, (int) $request->input('month', now()->month)));
         $yearNumber = (int) $request->input('year', now()->year);
+        $format = $request->input('format') === 'workbook' ? 'workbook' : 'zip';
 
         $users = User::query()
             ->select('id', 'name', 'nip', 'nik', 'jabatan')
@@ -133,7 +149,7 @@ class AdminAttendanceController extends Controller
 
         $reportJob = ReportJob::create([
             'user_id' => Auth::id(),
-            'type' => 'monthly_attendance',
+            'type' => $format === 'workbook' ? 'monthly_attendance_workbook' : 'monthly_attendance',
             'status' => 'pending',
             'total_users' => $users->count(),
             'processed_users' => 0,
@@ -154,11 +170,13 @@ class AdminAttendanceController extends Controller
      */
     public function processStep(ReportJob $reportJob, Request $request)
     {
+        abort_unless($reportJob->user_id === Auth::id(), 403);
+
         if ($reportJob->isFinished()) {
             return response()->json([
                 'status' => $reportJob->status,
                 'progress' => $reportJob->progressPercent(),
-                'message' => $reportJob->status === 'completed' ? 'Selesai! ZIP siap diunduh.' : 'Gagal.',
+                'message' => $reportJob->status === 'completed' ? 'Selesai! File siap diunduh.' : 'Gagal.',
             ]);
         }
 
@@ -167,7 +185,7 @@ class AdminAttendanceController extends Controller
             return response()->json([
                 'status' => 'completed',
                 'progress' => 100,
-                'message' => 'Selesai! ZIP siap diunduh.',
+                'message' => 'Selesai! File siap diunduh.',
             ]);
         }
 
@@ -226,66 +244,75 @@ class AdminAttendanceController extends Controller
 
             $monthLabel = $this->monthLabel($month);
 
-            $spreadsheet = $this->newAttendanceSpreadsheet('Rekap Absensi ' . $user->name . ' - ' . $monthLabel);
-            $sheet = $spreadsheet->getActiveSheet();
+            $spreadsheet = null;
+            if ($reportJob->type !== 'monthly_attendance_workbook') {
+                $spreadsheet = $this->newAttendanceSpreadsheet('Rekap Absensi ' . $user->name . ' - ' . $monthLabel);
+                $sheet = $spreadsheet->getActiveSheet();
 
-            foreach ($days as $index => $day) {
-                $dateStr = $day->toDateString();
-                $key = $user->id . '|' . $dateStr;
-                $dayRecords = isset($records[$key]) ? $records[$key]->keyBy('type') : collect();
-                $isLeave = isset($leaveDates[$dateStr]);
+                foreach ($days as $index => $day) {
+                    $dateStr = $day->toDateString();
+                    $key = $user->id . '|' . $dateStr;
+                    $dayRecords = isset($records[$key]) ? $records[$key]->keyBy('type') : collect();
+                    $isLeave = isset($leaveDates[$dateStr]);
 
-                $start = $dayRecords->get(AttendanceRecord::TYPE_START);
-                $end = $dayRecords->get(AttendanceRecord::TYPE_END);
-                $field = $dayRecords->get(AttendanceRecord::TYPE_FIELD);
-                $latest = $field ?: ($end ?: $start);
+                    $start = $dayRecords->get(AttendanceRecord::TYPE_START);
+                    $end = $dayRecords->get(AttendanceRecord::TYPE_END);
+                    $field = $dayRecords->get(AttendanceRecord::TYPE_FIELD);
+                    $latest = $field ?: ($end ?: $start);
 
-                $statusLabel = match (true) {
-                    $isLeave => 'Izin / Sakit',
-                    (bool) $field => 'Dinas Luar',
-                    (bool) $end => 'Hadir',
-                    (bool) $start => 'Belum Lengkap',
-                    default => 'Alfa',
-                };
+                    $statusLabel = match (true) {
+                        $isLeave => 'Izin / Sakit',
+                        (bool) $field => 'Dinas Luar',
+                        (bool) $end => 'Hadir',
+                        (bool) $start => 'Belum Lengkap',
+                        default => 'Alfa',
+                    };
 
-                $note = $field?->note ?: ($latest?->note ?: '-');
-                $location = $latest
-                    ? ($latest->address ?: ($latest->latitude ? 'Lat ' . $latest->latitude . ', Lng ' . $latest->longitude : '-'))
-                    : '-';
+                    $note = $field?->note ?: ($latest?->note ?: '-');
+                    $location = $latest
+                        ? ($latest->address ?: ($latest->latitude ? 'Lat ' . $latest->latitude . ', Lng ' . $latest->longitude : '-'))
+                        : '-';
 
-                $excelRow = $index + 3;
-                $sheet->fromArray([
-                    $index + 1, $user->name, $user->nip ?: '-', $user->nik ?: '-',
-                    $user->jabatan ?: 'PJLP', $day->translatedFormat('d F Y'),
-                    $start ? $start->recorded_at->format('H:i') . ' WIB' : '-',
-                    $end ? $end->recorded_at->format('H:i') . ' WIB' : '-',
-                    $field ? $field->recorded_at->format('H:i') . ' WIB' : '-',
-                    $statusLabel, $location, $note, '', '', '',
-                ], null, 'A' . $excelRow);
-                $this->addSelfieToSheet($sheet, $start, 'M', $excelRow);
-                $this->addSelfieToSheet($sheet, $end, 'N', $excelRow);
-                $this->addSelfieToSheet($sheet, $field, 'O', $excelRow);
+                    $excelRow = $index + 3;
+                    $sheet->fromArray([
+                        $index + 1, $user->name, $user->nip ?: '-', $user->nik ?: '-',
+                        $user->jabatan ?: 'PJLP', $day->translatedFormat('d F Y'),
+                        $start ? $start->recorded_at->format('H:i') . ' WIB' : '-',
+                        $end ? $end->recorded_at->format('H:i') . ' WIB' : '-',
+                        $field ? $field->recorded_at->format('H:i') . ' WIB' : '-',
+                        $statusLabel, $location, $note, '', '', '',
+                    ], null, 'A' . $excelRow);
+                    $this->addSelfieToSheet($sheet, $start, 'M', $excelRow);
+                    $this->addSelfieToSheet($sheet, $end, 'N', $excelRow);
+                    $this->addSelfieToSheet($sheet, $field, 'O', $excelRow);
+                }
+
+                $this->finishAttendanceSpreadsheet($sheet, count($days) + 2);
+            }
+            $exportDir = storage_path('app/exports');
+            if (!is_dir($exportDir)) {
+                mkdir($exportDir, 0775, true);
             }
 
-            $this->finishAttendanceSpreadsheet($sheet, count($days) + 2);
-            $tempPath = tempnam(sys_get_temp_dir(), 'attendance-');
-            (new Xlsx($spreadsheet))->save($tempPath);
-            $spreadsheet->disconnectWorksheets();
+            if ($reportJob->type === 'monthly_attendance_workbook') {
+                $exportPath = $exportDir . '/rekap-absensi-semua-' . $month->format('Y-m') . '-job-' . $reportJob->id . '.xlsx';
+                $this->appendUserToMonthlyWorkbook($exportPath, $user, $records, $leaveDates, $month, $monthLabel, $processed === 0);
+                $exportName = 'rekap-absensi-semua-' . $month->format('Y-m') . '.xlsx';
+            } else {
+                $tempPath = tempnam(sys_get_temp_dir(), 'attendance-');
+                (new Xlsx($spreadsheet))->save($tempPath);
+                $spreadsheet->disconnectWorksheets();
 
-            // Simpan ke ZIP
-            $zipDir = storage_path('app/exports');
-            if (!is_dir($zipDir)) {
-                mkdir($zipDir, 0775, true);
+                $exportPath = $exportDir . '/rekap-absensi-bulanan-' . $month->format('Y-m') . '-job-' . $reportJob->id . '.zip';
+                $zip = new ZipArchive();
+                if ($zip->open($exportPath, ZipArchive::CREATE) !== true) {
+                    throw new \RuntimeException('Gagal membuka ZIP.');
+                }
+                $zip->addFile($tempPath, $user->name . ' - ' . $monthLabel . '.xlsx');
+                $zip->close();
+                @unlink($tempPath);
+                $exportName = 'rekap-absensi-bulanan-' . $month->format('Y-m') . '.zip';
             }
-            $zipPath = $zipDir . '/rekap-absensi-bulanan-' . $month->format('Y-m') . '.zip';
-            $zip = new ZipArchive();
-            if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
-                throw new \RuntimeException('Gagal membuka ZIP.');
-            }
-            $userFileName = $user->name . ' - ' . $monthLabel . '.xlsx';
-            $zip->addFile($tempPath, $userFileName);
-            $zip->close();
-            @unlink($tempPath);
 
             $newProcessed = $processed + 1;
             $finished = $newProcessed >= $reportJob->total_users;
@@ -297,8 +324,8 @@ class AdminAttendanceController extends Controller
 
             if ($finished) {
                 $reportJob->update([
-                    'zip_path' => $zipPath,
-                    'zip_name' => 'rekap-absensi-bulanan-' . $month->format('Y-m') . '.zip',
+                    'zip_path' => $exportPath,
+                    'zip_name' => $exportName,
                 ]);
             }
 
@@ -308,7 +335,7 @@ class AdminAttendanceController extends Controller
                 'current_user' => $user->name,
                 'processed_users' => $reportJob->processed_users,
                 'total_users' => $reportJob->total_users,
-                'message' => $finished ? 'Selesai! ZIP siap diunduh.' : $user->name . ' selesai diproses.',
+                'message' => $finished ? 'Selesai! File siap diunduh.' : $user->name . ' selesai diproses.',
             ]);
         } catch (\Throwable $e) {
             $reportJob->update([
@@ -326,6 +353,7 @@ class AdminAttendanceController extends Controller
 
     public function downloadReportZip(ReportJob $reportJob)
     {
+        abort_unless($reportJob->user_id === Auth::id(), 403);
         abort_unless($reportJob->status === 'completed' && $reportJob->zip_path && file_exists($reportJob->zip_path), 404);
 
         return response()->download($reportJob->zip_path, $reportJob->zip_name)->deleteFileAfterSend(true);
@@ -550,25 +578,41 @@ class AdminAttendanceController extends Controller
         return $spreadsheet;
     }
 
-    private function addSelfieToSheet($sheet, ?AttendanceRecord $record, string $column, int $row): void
-    {
+    private function addSelfieToSheet(
+        $sheet,
+        ?AttendanceRecord $record,
+        string $column,
+        int $row,
+        int $maxWidth = 154,
+        int $maxHeight = 108,
+        int $cellWidth = 168,
+        int $cellHeight = 120,
+        ?int $topOffset = null,
+        bool $showPlaceholder = true
+    ): void {
         $cell = $column . $row;
 
         if (! $record?->selfie_path) {
-            $sheet->setCellValue($cell, '-');
+            if ($showPlaceholder) {
+                $sheet->setCellValue($cell, '-');
+            }
             return;
         }
 
         $path = Storage::disk('public')->path($record->selfie_path);
         if (! is_file($path)) {
-            $sheet->setCellValue($cell, 'File foto tidak ditemukan');
+            if ($showPlaceholder) {
+                $sheet->setCellValue($cell, 'File foto tidak ditemukan');
+            }
             return;
         }
 
         $imageInfo = @getimagesize($path);
         $supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
         if (! $imageInfo || ! in_array($imageInfo['mime'] ?? '', $supportedTypes, true)) {
-            $sheet->setCellValue($cell, 'Format foto tidak didukung Excel');
+            if ($showPlaceholder) {
+                $sheet->setCellValue($cell, 'Format foto tidak didukung Excel');
+            }
             return;
         }
 
@@ -577,10 +621,10 @@ class AdminAttendanceController extends Controller
         $drawing->setDescription('Foto ' . $record->label());
         $drawing->setPath($path);
         $drawing->setResizeProportional(true);
-        $drawing->setWidthAndHeight(154, 108);
+        $drawing->setWidthAndHeight($maxWidth, $maxHeight);
         $drawing->setCoordinates($cell);
-        $drawing->setOffsetX(max(5, (int) floor((168 - $drawing->getWidth()) / 2)));
-        $drawing->setOffsetY(max(5, (int) floor((120 - $drawing->getHeight()) / 2)));
+        $drawing->setOffsetX(max(4, (int) floor(($cellWidth - $drawing->getWidth()) / 2)));
+        $drawing->setOffsetY($topOffset ?? max(5, (int) floor(($cellHeight - $drawing->getHeight()) / 2)));
         $drawing->setWorksheet($sheet);
         $sheet->getRowDimension($row)->setRowHeight(90);
     }
@@ -609,6 +653,110 @@ class AdminAttendanceController extends Controller
         $sheet->getRowDimension(1)->setRowHeight(26);
         $sheet->getRowDimension(2)->setRowHeight(32);
         $sheet->setAutoFilter('A2:O' . $lastRow);
+    }
+
+    private function appendUserToMonthlyWorkbook(
+        string $path,
+        User $user,
+        $records,
+        array $leaveDates,
+        Carbon $month,
+        string $monthLabel,
+        bool $isFirstUser
+    ): void {
+        if ($isFirstUser || ! is_file($path)) {
+            $workbook = new Spreadsheet();
+            $sheet = $workbook->getActiveSheet();
+            $sheet->setTitle('Semua Absensi');
+            $sheet->freezePane('A3');
+        } else {
+            $workbook = IOFactory::load($path);
+            $sheet = $workbook->getSheetByName('Semua Absensi');
+            if (! $sheet) {
+                throw new \RuntimeException('Sheet semua absensi tidak ditemukan.');
+            }
+        }
+
+        $titleRow = $isFirstUser ? 1 : $sheet->getHighestRow() + 2;
+        $headingRow = $titleRow + 1;
+        $sheet->mergeCells('A' . $titleRow . ':O' . $titleRow);
+        $sheet->setCellValue('A' . $titleRow, 'Rekap Absensi ' . $user->name . ' - ' . $monthLabel);
+        $sheet->getStyle('A' . $titleRow)->getFont()->setBold(true)->setSize(16);
+        $sheet->fromArray([
+            'No', 'Nama Pegawai', 'NIP PJLP', 'NIK', 'Jabatan / Bidang', 'Tanggal',
+            'Absen Awal', 'Absen Akhir', 'Dinas Luar', 'Status', 'Lokasi Terakhir',
+            'Catatan / Tujuan', 'Foto Absen Awal', 'Foto Absen Akhir', 'Foto Dinas Luar',
+        ], null, 'A' . $headingRow);
+        $sheet->getStyle('A' . $headingRow . ':O' . $headingRow)->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'DFF6E8']],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+        ]);
+        $sheet->getRowDimension($headingRow)->setRowHeight(32);
+
+        for ($dayNumber = 1; $dayNumber <= $month->daysInMonth; $dayNumber++) {
+            $day = $month->copy()->day($dayNumber);
+            $dateString = $day->toDateString();
+            $dayRecords = isset($records[$user->id . '|' . $dateString])
+                ? $records[$user->id . '|' . $dateString]->keyBy('type')
+                : collect();
+            $start = $dayRecords->get(AttendanceRecord::TYPE_START);
+            $end = $dayRecords->get(AttendanceRecord::TYPE_END);
+            $field = $dayRecords->get(AttendanceRecord::TYPE_FIELD);
+            $latest = $field ?: ($end ?: $start);
+            $status = match (true) {
+                isset($leaveDates[$dateString]) => 'Izin / Sakit',
+                (bool) $field => 'Dinas Luar',
+                (bool) $end => 'Hadir',
+                (bool) $start => 'Belum Lengkap',
+                $day->isWeekend() => 'Libur',
+                default => 'Alfa',
+            };
+            $dataRow = $headingRow + $dayNumber;
+            $sheet->fromArray([
+                $dayNumber,
+                $user->name,
+                $user->nip ?: '-',
+                $user->nik ?: '-',
+                $user->jabatan ?: 'PJLP',
+                $day->translatedFormat('d F Y'),
+                $this->timeCell($start),
+                $this->timeCell($end),
+                $this->timeCell($field),
+                $status,
+                $this->locationText($latest),
+                $field?->note ?: ($latest?->note ?: '-'),
+                '', '', '',
+            ], null, 'A' . $dataRow);
+            $this->addSelfieToSheet($sheet, $start, 'M', $dataRow);
+            $this->addSelfieToSheet($sheet, $end, 'N', $dataRow);
+            $this->addSelfieToSheet($sheet, $field, 'O', $dataRow);
+        }
+
+        $lastDataRow = $headingRow + $month->daysInMonth;
+        $sheet->getStyle('A' . $headingRow . ':O' . $lastDataRow)->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '444444']]],
+            'alignment' => ['vertical' => Alignment::VERTICAL_TOP, 'wrapText' => true],
+        ]);
+        $sheet->getStyle('A' . ($headingRow + 1) . ':J' . $lastDataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('M' . ($headingRow + 1) . ':O' . $lastDataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C' . ($headingRow + 1) . ':D' . $lastDataRow)->getNumberFormat()->setFormatCode('@');
+
+        $widths = [
+            'A' => 6, 'B' => 24, 'C' => 16, 'D' => 20, 'E' => 22, 'F' => 22,
+            'G' => 15, 'H' => 15, 'I' => 15, 'J' => 16, 'K' => 30, 'L' => 30,
+            'M' => 24, 'N' => 24, 'O' => 24,
+        ];
+        foreach ($widths as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+        $workbook->setActiveSheetIndex(0);
+        (new Xlsx($workbook))->save($path);
+        $workbook->disconnectWorksheets();
     }
 
     private function statusFor($records, ?LeaveRequest $leave): string

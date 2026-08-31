@@ -3,7 +3,7 @@
 @section('content')
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Export Absensi Bulanan</p>
+    <p class="eyebrow">{{ $format === 'workbook' ? 'Export Semua Absensi' : 'Export Absensi Bulanan' }}</p>
     <h1>Memproses Export...</h1>
   </div>
 </section>
@@ -27,8 +27,8 @@
     <div id="export-done" style="display: none;">
       <div style="font-size: 3rem; color: #16a34a; margin-bottom: 1rem;">✅</div>
       <h2 style="margin: 0 0 0.5rem;">Export Selesai!</h2>
-      <p id="done-message" style="color: #555; margin-bottom: 1.5rem;">ZIP siap diunduh.</p>
-      <a id="download-link" class="primary-action" href="#" style="display: inline-block; padding: 0.75rem 2rem;">Download ZIP</a>
+      <p id="done-message" style="color: #555; margin-bottom: 1.5rem;">{{ $format === 'workbook' ? 'File Excel siap diunduh.' : 'ZIP siap diunduh.' }}</p>
+      <a id="download-link" class="primary-action" href="#" style="display: inline-block; padding: 0.75rem 2rem;">{{ $format === 'workbook' ? 'Download Excel' : 'Download ZIP' }}</a>
       <br><br>
       <a href="{{ route('admin.attendance.index') }}" class="ghost-action">Kembali ke Dashboard</a>
     </div>
@@ -49,6 +49,7 @@
   const csrfToken = '{{ csrf_token() }}';
   const month = {{ $month }};
   const year = {{ $year }};
+  const format = @json($format);
   let reportJobId = @json($reportJob?->id);
   let polling = true;
 
@@ -123,7 +124,7 @@
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ month: month, year: year }),
+      body: JSON.stringify({ month: month, year: year, format: format }),
     })
     .then(res => res.json())
     .then(data => {

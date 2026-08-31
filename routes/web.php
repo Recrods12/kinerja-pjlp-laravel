@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/absensi', [AdminAttendanceController::class, 'index'])->name('admin.attendance.index');
         Route::get('/admin/absensi/export-excel', [AdminAttendanceController::class, 'exportExcel'])->name('admin.attendance.exportExcel');
         Route::get('/admin/absensi/export-bulanan', [AdminAttendanceController::class, 'exportMonthly'])->name('admin.attendance.exportMonthly');
+        Route::get('/admin/absensi/export-bulanan-semua', [AdminAttendanceController::class, 'exportMonthlyAll'])->name('admin.attendance.exportMonthlyAll');
         Route::post('/admin/export-bulanan/start', [AdminAttendanceController::class, 'startExport'])->name('admin.attendance.startExport');
         Route::get('/admin/export-perf', [ReportController::class, 'showPerformanceExport'])->name('admin.reports.exportPerformance');
         Route::post('/admin/export-perf/start', [ReportController::class, 'startPerformanceExport'])->name('admin.reports.startPerformance');
