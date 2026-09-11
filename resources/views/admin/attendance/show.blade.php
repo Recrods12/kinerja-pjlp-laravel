@@ -32,9 +32,11 @@
             <h2>{{ $record->label() }}</h2>
             <p class="muted">{{ $record->recorded_at->format('H:i:s') }} WIB</p>
           </div>
-          <span class="status-pill done">Terverifikasi</span>
+          @include('attendance.partials.approval-status')
         </div>
 
+        @include('attendance.partials.approval-detail')
+        @include('admin.attendance.approval-actions')
         <dl class="detail-list">
           <div>
             <dt>Lokasi</dt>

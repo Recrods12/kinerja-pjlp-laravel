@@ -33,6 +33,14 @@
         @endforeach
       </div>
 
+      @if ($records->get($type)?->approval_status === 'rejected')
+        <div class="attendance-notice">
+          <strong>Pengajuan sebelumnya ditolak. Silakan absen ulang.</strong>
+          @if ($records->get($type)->rejection_reason)<p>{{ $records->get($type)->rejection_reason }}</p>@endif
+          <p>Ambil foto dan lokasi terbaru. Pengajuan ini akan diperiksa kembali oleh admin.</p>
+        </div>
+      @endif
+
       <div class="attendance-time">
         <span>Jam Server</span>
         <strong data-server-clock data-start="{{ now()->toIso8601String() }}">{{ now()->format('H:i:s') }}</strong>

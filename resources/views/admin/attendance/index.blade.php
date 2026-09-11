@@ -7,6 +7,8 @@
   $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   $dateLabel = $dayNames[$date->dayOfWeek] . ', ' . $date->format('d') . ' ' . $monthNames[$date->month] . ' ' . $date->year;
   $statusLabels = [
+    'pending' => 'Menunggu persetujuan',
+    'rejected' => 'Ditolak',
     'hadir' => 'Hadir',
     'dinas_luar' => 'Dinas Luar',
     'izin' => 'Izin / Sakit',
@@ -14,6 +16,8 @@
     'belum_lengkap' => 'Belum Lengkap',
   ];
   $statusNotes = [
+    'pending' => 'Pengajuan belum disetujui admin',
+    'rejected' => 'Pengajuan ditolak admin',
     'hadir' => 'Awal + akhir / absen akhir',
     'dinas_luar' => 'Tugas luar aktif',
     'izin' => 'Cuti disetujui',
@@ -28,6 +32,7 @@
   $selectedUser = $selectedRow['user'] ?? null;
   $selectedRecords = $selectedRow['records'] ?? collect();
   $selectedLatest = $selectedRow['latestRecord'] ?? null;
+  $selectedHistory = $selectedRow['historyRecord'] ?? null;
   $selectedField = $selectedRecords->get(AttendanceRecord::TYPE_FIELD);
   $selectedLeave = $selectedRow['leave'] ?? null;
 
@@ -63,6 +68,33 @@
         <input type="date" name="date" value="{{ $date->toDateString() }}" onchange="this.form.submit()">
       </form>
     </div>
+  </section>
+
+  <section class="panel attendance-approval-panel" aria-labelledby="attendance-approval-heading">
+    <div class="attendance-approval-heading">
+      <div><p class="eyebrow">PERSETUJUAN ABSENSI</p><h2 id="attendance-approval-heading">Menunggu persetujuan <span class="attendance-approval-count">{{ $pendingRecords->total() }}</span></h2><p class="muted">Periksa bukti absensi sebelum menyetujui pengajuan.</p></div>
+      <span class="attendance-approval-scope">Semua tanggal &middot; Pengajuan terlama dahulu</span>
+    </div>
+    <div class="attendance-approval-list">
+      @forelse ($pendingRecords as $record)
+        <article class="attendance-approval-item">
+          <div class="attendance-approval-person">
+            @if ($record->user->avatar_path)
+              <img class="attendance-approval-avatar" src="{{ asset('storage/' . $record->user->avatar_path) }}" alt="">
+            @else
+              <span class="attendance-approval-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($record->user->name, 0, 1)) }}</span>
+            @endif
+            <div><strong>{{ $record->user->name }}</strong><small>{{ $record->user->jabatan ?: 'PJLP' }}</small></div>
+          </div>
+          <div class="attendance-approval-submission"><span class="attendance-type-badge">{{ $record->label() }}</span><small>{{ $record->recorded_at->format('d M Y') }} <span>&middot;</span> {{ $record->recorded_at->format('H:i') }} WIB</small></div>
+          <div class="attendance-approval-evidence"><p>{{ $record->address ?: 'Lokasi GPS tersimpan' }}</p>@if ($record->note)<small>{{ $record->note }}</small>@endif<a href="{{ route('admin.attendance.show', $record) }}">Lihat foto &amp; lokasi</a></div>
+          @include('admin.attendance.approval-actions')
+        </article>
+      @empty
+        <div class="attendance-approval-empty"><span aria-hidden="true">&#10003;</span><div><strong>Semua pengajuan sudah diproses</strong><p class="muted">Pengajuan baru akan muncul di sini untuk ditinjau.</p></div></div>
+      @endforelse
+    </div>
+    @if ($pendingRecords->hasPages())<div class="attendance-approval-pagination">{{ $pendingRecords->withQueryString()->links() }}</div>@endif
   </section>
 
   <section class="summary-strip">
@@ -146,21 +178,21 @@
                 <td><span class="muted">{{ $user->jabatan ?: 'PJLP' }}</span></td>
                 <td class="attendance-time-cell">
                   @if ($start)
-                    <span class="time-check">&check;</span>{{ $start->recorded_at->format('H:i') }} WIB
+                    {{ $start->recorded_at->format('H:i') }} WIB<br>@include('attendance.partials.approval-status', ['record' => $start])
                   @else
                     -
                   @endif
                 </td>
                 <td class="attendance-time-cell">
                   @if ($end)
-                    <span class="time-check">&check;</span>{{ $end->recorded_at->format('H:i') }} WIB
+                    {{ $end->recorded_at->format('H:i') }} WIB<br>@include('attendance.partials.approval-status', ['record' => $end])
                   @else
                     -
                   @endif
                 </td>
                 <td class="attendance-time-cell">
                   @if ($field)
-                    <span class="time-check field">&check;</span>{{ $field->recorded_at->format('H:i') }} WIB
+                    {{ $field->recorded_at->format('H:i') }} WIB<br>@include('attendance.partials.approval-status', ['record' => $field])
                   @else
                     -
                   @endif
@@ -176,8 +208,8 @@
                   @endif
                 </td>
                 <td>
-                  @if ($latest)
-                    <a class="mini-action" href="{{ route('admin.attendance.show', $latest) }}">Lihat</a>
+                  @if ($row['historyRecord'])
+                    <a class="mini-action" href="{{ route('admin.attendance.show', $row['historyRecord']) }}">Lihat</a>
                   @else
                     -
                   @endif
@@ -240,8 +272,8 @@
           @endif
         </div>
 
-        @if ($selectedLatest)
-          <a class="primary-action full-action" href="{{ route('admin.attendance.show', $selectedLatest) }}">Lihat Riwayat Login</a>
+        @if ($selectedHistory)
+          <a class="primary-action full-action" href="{{ route('admin.attendance.show', $selectedHistory) }}">Lihat Riwayat Absensi</a>
         @endif
       @else
         <p class="muted">Belum ada pegawai yang sesuai filter.</p>

@@ -59,7 +59,7 @@ class AttendanceController extends Controller
         $date = $now->copy()->startOfDay();
         $records = $this->recordsForDate($user, $date);
 
-        $this->validateAttendanceFlow($type, $records, $now);
+        $this->validateAttendanceFlow($type, $records->where('approval_status', '!=', AttendanceRecord::STATUS_REJECTED), $now);
 
         $data = $request->validate([
             'latitude' => ['required', 'numeric', 'between:-90,90'],
@@ -82,11 +82,29 @@ class AttendanceController extends Controller
         $data['selfie_path'] = $request->file('selfie')->store('attendance-selfies', 'public');
         unset($data['selfie']);
 
-        $user->attendanceRecords()->create($data + [
+        $payload = $data + [
             'work_date' => $date->toDateString(),
             'type' => $type,
             'recorded_at' => $now,
-        ]);
+            'approval_status' => AttendanceRecord::STATUS_PENDING,
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+            'rejection_reason' => null,
+        ];
+
+        $previous = $records->get($type);
+        if ($previous) {
+            $updated = $user->attendanceRecords()->whereKey($previous->id)
+                ->where('approval_status', AttendanceRecord::STATUS_REJECTED)
+                ->where('submission_version', $previous->submission_version)
+                ->update($payload + ['submission_version' => \Illuminate\Support\Facades\DB::raw('submission_version + 1')]);
+            if (! $updated) {
+                Storage::disk('public')->delete($data['selfie_path']);
+                throw ValidationException::withMessages(['attendance' => 'Pengajuan sudah dikirim. Silakan muat ulang halaman.']);
+            }
+        } else {
+            $user->attendanceRecords()->create($payload);
+        }
 
         // Notifikasi admin
         $typeLabel = AttendanceRecord::labels()[$type];
@@ -103,7 +121,7 @@ class AttendanceController extends Controller
 
         return redirect()
             ->route('attendance.index')
-            ->with('status', $typeLabel . ' berhasil disimpan.');
+            ->with('status', $typeLabel . ' berhasil diajukan. Menunggu persetujuan admin.');
     }
 
     public function show(Request $request, AttendanceRecord $attendanceRecord)
@@ -122,46 +140,6 @@ class AttendanceController extends Controller
         ]);
     }
 
-    public function edit(Request $request, AttendanceRecord $attendanceRecord)
-    {
-        $this->ensureOwnedByUser($request, $attendanceRecord);
-
-        return view('attendance.edit', [
-            'attendanceRecord' => $attendanceRecord,
-        ]);
-    }
-
-    public function update(Request $request, AttendanceRecord $attendanceRecord)
-    {
-        $this->ensureOwnedByUser($request, $attendanceRecord);
-
-        $data = $request->validate([
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'accuracy' => ['nullable', 'integer', 'min:0', 'max:50000'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'note' => [$attendanceRecord->type === AttendanceRecord::TYPE_FIELD ? 'required' : 'nullable', 'string', 'max:1000'],
-            'selfie' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:12288'],
-        ], [
-            'note.required' => 'Tujuan atau keterangan dinas luar wajib diisi.',
-            'selfie.uploaded' => 'Foto selfie gagal diunggah. Coba ambil foto ulang, pastikan koneksi stabil, atau kecilkan ukuran foto.',
-            'selfie.file' => 'Foto selfie tidak valid.',
-            'selfie.mimes' => 'File selfie harus berupa gambar JPG, PNG, WEBP, HEIC, atau HEIF.',
-            'selfie.max' => 'Ukuran foto selfie maksimal 12 MB.',
-        ]);
-
-        if ($request->hasFile('selfie')) {
-            $this->replaceSelfie($attendanceRecord, $request);
-        }
-
-        unset($data['selfie']);
-        $attendanceRecord->update($data);
-
-        return redirect()
-            ->route('attendance.show', $attendanceRecord)
-            ->with('status', 'Data absensi berhasil diperbarui.');
-    }
-
     private function recordsForDate($user, Carbon $date)
     {
         return $user->attendanceRecords()
@@ -173,15 +151,6 @@ class AttendanceController extends Controller
     private function ensureOwnedByUser(Request $request, AttendanceRecord $attendanceRecord): void
     {
         abort_unless($attendanceRecord->user_id === $request->user()->id, 403);
-    }
-
-    private function replaceSelfie(AttendanceRecord $attendanceRecord, Request $request): void
-    {
-        if ($attendanceRecord->selfie_path) {
-            Storage::disk('public')->delete($attendanceRecord->selfie_path);
-        }
-
-        $attendanceRecord->selfie_path = $request->file('selfie')->store('attendance-selfies', 'public');
     }
 
     private function summary($records): array

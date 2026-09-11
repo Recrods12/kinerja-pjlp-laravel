@@ -33,9 +33,11 @@
             <h2>{{ $record->label() }}</h2>
             <p class="muted">{{ $record->recorded_at->format('H:i:s') }} WIB</p>
           </div>
-          <span class="status-pill done">Tersimpan</span>
+          @include('attendance.partials.approval-status')
         </div>
 
+        @include('attendance.partials.approval-detail')
+        @if ($record->approval_status === 'rejected' && $record->work_date->isToday())<a class="ghost-action" href="{{ route('attendance.create', $record->type) }}">Ajukan ulang dengan foto dan lokasi baru</a>@endif
         <dl class="detail-list">
           <div>
             <dt>Tanggal</dt>

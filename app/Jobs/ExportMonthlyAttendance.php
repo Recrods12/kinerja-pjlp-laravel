@@ -40,7 +40,7 @@ class ExportMonthlyAttendance implements ShouldQueue
                 ->get();
 
             $allRecords = AttendanceRecord::query()
-                ->select('id', 'user_id', 'work_date', 'type', 'recorded_at', 'latitude', 'longitude', 'address', 'note')
+                ->select('id', 'user_id', 'approval_status', 'work_date', 'type', 'recorded_at', 'latitude', 'longitude', 'address', 'note')
                 ->whereDate('work_date', '>=', $month)
                 ->whereDate('work_date', '<=', $monthEnd)
                 ->get()
@@ -96,6 +96,8 @@ class ExportMonthlyAttendance implements ShouldQueue
                     $dayRecords = isset($allRecords[$key]) ? $allRecords[$key]->keyBy('type') : collect();
                     $isLeave = isset($leaveDates[$user->id][$dateStr]);
 
+                    $approvalDayStatus = AttendanceRecord::dayStatus($dayRecords);
+                    $dayRecords = $dayRecords->where('approval_status', AttendanceRecord::STATUS_APPROVED);
                     $start = $dayRecords->get(AttendanceRecord::TYPE_START);
                     $end = $dayRecords->get(AttendanceRecord::TYPE_END);
                     $field = $dayRecords->get(AttendanceRecord::TYPE_FIELD);
@@ -103,6 +105,8 @@ class ExportMonthlyAttendance implements ShouldQueue
 
                     $statusLabel = match (true) {
                         $isLeave => 'Izin / Sakit',
+                        $approvalDayStatus === 'pending' => 'Menunggu persetujuan',
+                        $approvalDayStatus === 'rejected' => 'Ditolak',
                         (bool) $field => 'Dinas Luar',
                         (bool) $end => 'Hadir',
                         (bool) $start => 'Belum Lengkap',

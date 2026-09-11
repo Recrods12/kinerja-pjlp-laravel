@@ -38,6 +38,7 @@ class AdminAttendanceController extends Controller
             'rows' => $rows,
             'status' => $status,
             'search' => $search,
+            'pendingRecords' => AttendanceRecord::with('user')->where('approval_status', AttendanceRecord::STATUS_PENDING)->orderBy('recorded_at')->paginate(15, ['*'], 'approval_page'),
             'summary' => [
                 'hadir' => $summaryRows->where('status', 'hadir')->count(),
                 'dinas_luar' => $summaryRows->where('status', 'dinas_luar')->count(),
@@ -46,6 +47,50 @@ class AdminAttendanceController extends Controller
                 'belum_lengkap' => $summaryRows->where('status', 'belum_lengkap')->count(),
             ],
         ]);
+    }
+
+    public function approve(Request $request, AttendanceRecord $attendanceRecord)
+    {
+        return $this->review($request, $attendanceRecord, AttendanceRecord::STATUS_APPROVED);
+    }
+
+    public function reject(Request $request, AttendanceRecord $attendanceRecord)
+    {
+        $request->validate(['rejection_reason' => ['nullable', 'string', 'max:1000']]);
+        return $this->review($request, $attendanceRecord, AttendanceRecord::STATUS_REJECTED);
+    }
+
+    private function review(Request $request, AttendanceRecord $attendanceRecord, string $status)
+    {
+        $request->validate([
+            'submission_version' => ['required', 'integer', 'min:1'],
+        ], [
+            'submission_version.required' => 'Halaman ini sudah tidak berlaku. Silakan muat ulang dan periksa data terbaru.',
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $attendanceRecord, $status) {
+            $record = AttendanceRecord::lockForUpdate()->findOrFail($attendanceRecord->id);
+            if ($record->submission_version !== (int) $request->input('submission_version')) {
+                throw ValidationException::withMessages(['approval' => 'Pengajuan sudah diperbarui. Silakan muat ulang dan periksa kembali.']);
+            }
+            if ($record->approval_status !== AttendanceRecord::STATUS_PENDING) {
+                throw ValidationException::withMessages(['approval' => 'Pengajuan absensi ini sudah diproses.']);
+            }
+            $record->update([
+                'approval_status' => $status,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+                'rejection_reason' => $status === AttendanceRecord::STATUS_REJECTED ? $request->input('rejection_reason') : null,
+            ]);
+            \App\Models\Notification::create([
+                'user_id' => $record->user_id,
+                'type' => 'attendance_' . $status,
+                'title' => $record->label() . ' ' . strtolower($record->approvalLabel()),
+                'body' => $record->work_date->format('d/m/Y') . ($record->rejection_reason ? ': ' . $record->rejection_reason : ' telah ' . strtolower($record->approvalLabel()) . ' admin.'),
+                'link' => route('attendance.show', $record),
+            ]);
+        });
+        return back()->with('status', 'Pengajuan absensi berhasil diproses.');
     }
 
     public function exportExcel(Request $request)
@@ -63,11 +108,11 @@ class AdminAttendanceController extends Controller
 
             foreach ($rows as $index => $row) {
                 $user = $row['user'];
-                $records = $row['records'];
+                $records = $row['records']->where('approval_status', AttendanceRecord::STATUS_APPROVED);
                 $start = $records->get(AttendanceRecord::TYPE_START);
                 $end = $records->get(AttendanceRecord::TYPE_END);
                 $field = $records->get(AttendanceRecord::TYPE_FIELD);
-                $latest = $row['latestRecord'];
+$latest = $records->sortByDesc('recorded_at')->first();
                 $leave = $row['leave'];
 
                 $excelRow = $index + 3;
@@ -212,7 +257,7 @@ class AdminAttendanceController extends Controller
 
             // Ambil data untuk user ini saja — ringan
             $records = AttendanceRecord::query()
-                ->select('id', 'user_id', 'work_date', 'type', 'recorded_at', 'latitude', 'longitude', 'address', 'selfie_path', 'note')
+                ->select('id', 'user_id', 'approval_status', 'work_date', 'type', 'recorded_at', 'latitude', 'longitude', 'address', 'selfie_path', 'note')
                 ->where('user_id', $user->id)
                 ->whereDate('work_date', '>=', $month)
                 ->whereDate('work_date', '<=', $monthEnd)
@@ -255,6 +300,8 @@ class AdminAttendanceController extends Controller
                     $dayRecords = isset($records[$key]) ? $records[$key]->keyBy('type') : collect();
                     $isLeave = isset($leaveDates[$dateStr]);
 
+                    $approvalDayStatus = AttendanceRecord::dayStatus($dayRecords);
+                    $dayRecords = $dayRecords->where('approval_status', AttendanceRecord::STATUS_APPROVED);
                     $start = $dayRecords->get(AttendanceRecord::TYPE_START);
                     $end = $dayRecords->get(AttendanceRecord::TYPE_END);
                     $field = $dayRecords->get(AttendanceRecord::TYPE_FIELD);
@@ -262,6 +309,8 @@ class AdminAttendanceController extends Controller
 
                     $statusLabel = match (true) {
                         $isLeave => 'Izin / Sakit',
+                        $approvalDayStatus === 'pending' => 'Menunggu persetujuan',
+                        $approvalDayStatus === 'rejected' => 'Ditolak',
                         (bool) $field => 'Dinas Luar',
                         (bool) $end => 'Hadir',
                         (bool) $start => 'Belum Lengkap',
@@ -410,8 +459,9 @@ class AdminAttendanceController extends Controller
 
         unset($data['recorded_time'], $data['selfie']);
 
-        $attendanceRecord->update($data + [
+        AttendanceRecord::whereKey($attendanceRecord->id)->update($data + [
             'recorded_at' => $recordedAt,
+            'submission_version' => \Illuminate\Support\Facades\DB::raw('submission_version + 1'),
         ]);
 
         return redirect()
@@ -481,6 +531,8 @@ class AdminAttendanceController extends Controller
             $userRecords = $records->get($user->id, collect())->keyBy('type');
             $leave = $leaves->get($user->id);
             $rowStatus = $this->statusFor($userRecords, $leave);
+            $historyRecord = $userRecords->sortByDesc('recorded_at')->first();
+            $userRecords = $userRecords->where('approval_status', '!=', AttendanceRecord::STATUS_REJECTED);
             $latestRecord = $userRecords->sortByDesc('recorded_at')->first();
 
             return [
@@ -489,6 +541,7 @@ class AdminAttendanceController extends Controller
                 'leave' => $leave,
                 'status' => $rowStatus,
                 'latestRecord' => $latestRecord,
+                'historyRecord' => $historyRecord,
             ];
         });
     }
@@ -505,6 +558,8 @@ class AdminAttendanceController extends Controller
     private function statusLabels(): array
     {
         return [
+            'pending' => 'Menunggu persetujuan',
+            'rejected' => 'Ditolak',
             'hadir' => 'Hadir',
             'dinas_luar' => 'Dinas Luar',
             'izin' => 'Izin / Sakit',
@@ -704,12 +759,16 @@ class AdminAttendanceController extends Controller
             $dayRecords = isset($records[$user->id . '|' . $dateString])
                 ? $records[$user->id . '|' . $dateString]->keyBy('type')
                 : collect();
+            $approvalDayStatus = AttendanceRecord::dayStatus($dayRecords);
+            $dayRecords = $dayRecords->where('approval_status', AttendanceRecord::STATUS_APPROVED);
             $start = $dayRecords->get(AttendanceRecord::TYPE_START);
             $end = $dayRecords->get(AttendanceRecord::TYPE_END);
             $field = $dayRecords->get(AttendanceRecord::TYPE_FIELD);
             $latest = $field ?: ($end ?: $start);
             $status = match (true) {
                 isset($leaveDates[$dateString]) => 'Izin / Sakit',
+                $approvalDayStatus === 'pending' => 'Menunggu persetujuan',
+                $approvalDayStatus === 'rejected' => 'Ditolak',
                 (bool) $field => 'Dinas Luar',
                 (bool) $end => 'Hadir',
                 (bool) $start => 'Belum Lengkap',
@@ -761,22 +820,6 @@ class AdminAttendanceController extends Controller
 
     private function statusFor($records, ?LeaveRequest $leave): string
     {
-        if ($leave) {
-            return 'izin';
-        }
-
-        if ($records->has(AttendanceRecord::TYPE_FIELD)) {
-            return 'dinas_luar';
-        }
-
-        if ($records->has(AttendanceRecord::TYPE_END)) {
-            return 'hadir';
-        }
-
-        if ($records->has(AttendanceRecord::TYPE_START)) {
-            return 'belum_lengkap';
-        }
-
-        return 'alfa';
+        return AttendanceRecord::dayStatus($records, (bool) $leave);
     }
 }

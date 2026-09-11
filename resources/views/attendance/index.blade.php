@@ -6,7 +6,7 @@
   $monthNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
   $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   $dateLabel = $dayNames[$date->dayOfWeek] . ', ' . $date->format('d') . ' ' . $monthNames[$date->month] . ' ' . $date->year;
-  $formatTime = fn ($record) => $record ? $record->recorded_at->format('H:i') . ' WIB' : 'Belum Absen';
+  $formatTime = fn ($record) => $record ? $record->recorded_at->format('H:i') . ' WIB - ' . $record->approvalLabel() : 'Belum Absen';
 @endphp
 
 @section('content')
@@ -14,7 +14,7 @@
     <div>
       <p class="eyebrow">Absensi Mobile</p>
       <h1>Selamat Pagi, {{ $user->name }}</h1>
-      <p class="muted">Pilih jenis absensi sesuai kondisi kerja lapangan hari ini.</p>
+      <p class="muted">Absen awal, absen akhir, dan dinas luar wajib mendapat persetujuan admin.</p>
     </div>
     <div class="page-actions">
       <a class="ghost-action" href="{{ route('dashboard') }}">Dashboard</a>
@@ -31,29 +31,29 @@
   </section>
 
   <section class="attendance-grid">
-    <a class="attendance-action-card green" href="{{ $summary['start'] ? route('attendance.show', $summary['start']) : route('attendance.create', AttendanceRecord::TYPE_START) }}">
+    <a class="attendance-action-card green" href="{{ $summary['start'] && $summary['start']->approval_status !== 'rejected' ? route('attendance.show', $summary['start']) : route('attendance.create', AttendanceRecord::TYPE_START) }}">
       <i>IN</i>
       <span>
         <strong>Absen Awal</strong>
         <small>Mulai kerja pagi / tugas lapangan</small>
       </span>
-      <em>{{ $formatTime($summary['start']) }}</em>
+      <em>{{ $summary['start']?->approval_status === 'rejected' ? 'Ditolak - Ajukan ulang' : $formatTime($summary['start']) }}</em>
     </a>
-    <a class="attendance-action-card red" href="{{ $summary['end'] ? route('attendance.show', $summary['end']) : route('attendance.create', AttendanceRecord::TYPE_END) }}">
+    <a class="attendance-action-card red" href="{{ $summary['end'] && $summary['end']->approval_status !== 'rejected' ? route('attendance.show', $summary['end']) : route('attendance.create', AttendanceRecord::TYPE_END) }}">
       <i>OUT</i>
       <span>
         <strong>Absen Akhir</strong>
         <small>Pulang / selesai tugas setelah 12.00</small>
       </span>
-      <em>{{ $formatTime($summary['end']) }}</em>
+      <em>{{ $summary['end']?->approval_status === 'rejected' ? 'Ditolak - Ajukan ulang' : $formatTime($summary['end']) }}</em>
     </a>
-    <a class="attendance-action-card blue" href="{{ $summary['field'] ? route('attendance.show', $summary['field']) : route('attendance.create', AttendanceRecord::TYPE_FIELD) }}">
+    <a class="attendance-action-card blue" href="{{ $summary['field'] && $summary['field']->approval_status !== 'rejected' ? route('attendance.show', $summary['field']) : route('attendance.create', AttendanceRecord::TYPE_FIELD) }}">
       <i>DL</i>
       <span>
         <strong>Dinas Luar</strong>
         <small>1x absen jika tidak kembali ke kantor</small>
       </span>
-      <em>{{ $formatTime($summary['field']) }}</em>
+      <em>{{ $summary['field']?->approval_status === 'rejected' ? 'Ditolak - Ajukan ulang' : $formatTime($summary['field']) }}</em>
     </a>
   </section>
 
@@ -67,19 +67,19 @@
       </div>
       <div class="attendance-status-list">
         @if ($summary['start'])
-          <a class="attendance-status-row" href="{{ route('attendance.show', $summary['start']) }}"><span class="status-dot done"></span><strong>Absen Awal</strong><em>{{ $formatTime($summary['start']) }}</em></a>
+          <a class="attendance-status-row" href="{{ route('attendance.show', $summary['start']) }}"><span class="status-dot pending"></span><strong>Absen Awal</strong><em>{{ $formatTime($summary['start']) }}</em></a>
         @else
           <div><span class="status-dot neutral"></span><strong>Absen Awal</strong><em>Belum Absen</em></div>
         @endif
 
         @if ($summary['end'])
-          <a class="attendance-status-row" href="{{ route('attendance.show', $summary['end']) }}"><span class="status-dot done"></span><strong>Absen Akhir</strong><em>{{ $formatTime($summary['end']) }}</em></a>
+          <a class="attendance-status-row" href="{{ route('attendance.show', $summary['end']) }}"><span class="status-dot pending"></span><strong>Absen Akhir</strong><em>{{ $formatTime($summary['end']) }}</em></a>
         @else
           <div><span class="status-dot neutral"></span><strong>Absen Akhir</strong><em>Belum Absen</em></div>
         @endif
 
         @if ($summary['field'])
-          <a class="attendance-status-row" href="{{ route('attendance.show', $summary['field']) }}"><span class="status-dot field"></span><strong>Dinas Luar</strong><em>{{ $formatTime($summary['field']) }}</em></a>
+          <a class="attendance-status-row" href="{{ route('attendance.show', $summary['field']) }}"><span class="status-dot pending"></span><strong>Dinas Luar</strong><em>{{ $formatTime($summary['field']) }}</em></a>
         @else
           <div><span class="status-dot neutral"></span><strong>Dinas Luar</strong><em>Tidak Aktif</em></div>
         @endif
@@ -101,7 +101,7 @@
               <strong>{{ $record->label() }}</strong>
               <small>{{ $record->work_date->format('d') }} {{ $monthNames[$record->work_date->month] }} {{ $record->work_date->year }} - {{ $record->recorded_at->format('H:i') }} WIB</small>
             </span>
-            <em class="status-pill done">Tersimpan</em>
+            @include('attendance.partials.approval-status')
           </a>
         @empty
           <p class="muted">Belum ada riwayat absensi.</p>
