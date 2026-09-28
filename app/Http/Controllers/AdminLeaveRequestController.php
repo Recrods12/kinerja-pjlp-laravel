@@ -91,7 +91,7 @@ class AdminLeaveRequestController extends Controller
 
         $startDate = Carbon::parse($data['start_date']);
         $endDate = Carbon::parse($data['end_date']);
-        $totalDays = $this->workdayCount($startDate, $endDate);
+        $totalDays = $this->workdayCount($startDate, $endDate, $leaveRequest->user);
 
         if ($totalDays < 1) {
             return back()
@@ -315,7 +315,7 @@ class AdminLeaveRequestController extends Controller
         return [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
     }
 
-    private function workdayCount(Carbon $startDate, Carbon $endDate): int
+    private function workdayCount(Carbon $startDate, Carbon $endDate, User $user): int
     {
         $holidayDates = Holiday::query()
             ->whereBetween('holiday_date', [$startDate->copy()->startOfDay(), $endDate->copy()->startOfDay()])
@@ -327,7 +327,7 @@ class AdminLeaveRequestController extends Controller
         $date = $startDate->copy();
 
         while ($date->lte($endDate)) {
-            if (! $date->isWeekend() && ! in_array($date->toDateString(), $holidayDates, true)) {
+            if ($user->isScheduledWorkday($date, $holidayDates)) {
                 $count++;
             }
 
